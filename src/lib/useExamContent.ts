@@ -95,7 +95,8 @@ export function useExamContent(id: string) {
     }
     let alive = true;
     setLoading(true);
-    generate({ data: { id, material: materialFor(config) } })
+    materialFor(config)
+      .then((material) => generate({ data: { id, material } }))
       .then((res) => {
         if (!alive) return;
         const value: Cached = { items: res.items, warning: res.warning, report: res.report };
