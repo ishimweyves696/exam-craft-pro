@@ -420,6 +420,7 @@ function ConfigPage() {
                   {book && config.sourceMaterial?.nodeIds.length ? (
                     <SectionSourcePicker
                       book={book}
+                      sectionId={section.id}
                       availableIds={config.sourceMaterial.nodeIds}
                       value={section.sourceNodeIds ?? []}
                       onChange={(ids) =>

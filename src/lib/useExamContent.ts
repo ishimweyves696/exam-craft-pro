@@ -52,11 +52,14 @@ function writeCache(id: string, value: Cached) {
 /**
  * Rebuild the excerpts for this exam from the book stored on this device.
  * Code decides what the model sees; the exam id only carries the ticked ids.
+ * Device storage is asynchronous, so this resolves before generation starts.
  */
-function materialFor(config: ReturnType<typeof decodeConfig>): MaterialPayload | undefined {
+async function materialFor(
+  config: ReturnType<typeof decodeConfig>,
+): Promise<MaterialPayload | undefined> {
   const ref = config.sourceMaterial;
   if (!ref?.bookId) return undefined;
-  const book = loadBook(ref.bookId);
+  const book = await loadBook(ref.bookId);
   if (!book) return undefined;
   const bySection: Record<string, string[]> = {};
   (config.sectionPlan ?? []).forEach((s) => {
