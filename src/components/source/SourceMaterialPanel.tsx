@@ -42,7 +42,7 @@ export function SourceMaterialPanel({ book, selection, onBook, onSelection }: Pr
   const [error, setError] = useState<string>();
   const [treeOpen, setTreeOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const abortRef = useRef<AbortController>();
+  const abortRef = useRef<AbortController | undefined>(undefined);
 
   useEffect(() => {
     let alive = true;
