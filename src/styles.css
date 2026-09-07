@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./print.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -141,4 +142,56 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+/* ============================================================
+ * Studio workspace design tokens (Apple-style light workspace)
+ * ============================================================ */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-hairline: var(--hairline);
+  --color-ink: var(--ink);
+  --color-subtle: var(--subtle);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+}
+
+:root {
+  --canvas: oklch(0.967 0.0015 286);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.928 0.004 286);
+  --hairline: oklch(0.868 0.0032 286);
+  --ink: oklch(0.244 0.002 286);
+  --subtle: oklch(0.625 0.004 286);
+  --brand: oklch(0.582 0.19 254);
+  --brand-hover: oklch(0.612 0.19 254);
+  --brand-foreground: oklch(1 0 0);
+  --brand-soft: oklch(0.956 0.022 250);
+  --ok: oklch(0.748 0.19 145);
+  --ok-soft: oklch(0.965 0.03 150);
+  --warn: oklch(0.77 0.172 62);
+  --warn-soft: oklch(0.968 0.035 75);
+  --danger: oklch(0.635 0.23 29);
+  --danger-soft: oklch(0.95 0.035 25);
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--subtle) 35%, transparent);
+    border-radius: 999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { scrollbar-width: none; }
 }

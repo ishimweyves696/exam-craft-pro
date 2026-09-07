@@ -1,0 +1,1033 @@
+
+@page {
+  size: A4 portrait;
+  margin: 1.8cm 1.5cm;
+}
+@page :first {
+  margin: 0;
+}
+
+/* ========================================================
+   PHASE 1: DESIGN LIBRARY & PRE-BUILT FORMATTING PROPERTIES
+   ======================================================== */
+:root {
+  /* Line Styles */
+  --ep-line-dotted: 1.5px dotted #555;
+  --ep-line-dashed: 1.5px dashed #666;
+  --ep-line-solid: 1.2px solid #000;
+  
+  /* Spacing Heights */
+  --ep-space-small: 0.85cm;
+  --ep-space-medium: 1.5cm;
+  
+  /* Colors */
+  --ep-bg-shade: #f8f9fa;
+  --ep-border-shade: #d1d5db;
+}
+
+/* Answer Space Modifiers */
+.examprint-answer-space[data-style="dotted"] .examprint-answer-line { border-bottom: var(--ep-line-dotted); }
+.examprint-answer-space[data-style="dashed"] .examprint-answer-line { border-bottom: var(--ep-line-dashed); }
+.examprint-answer-space[data-style="solid"] .examprint-answer-line { border-bottom: var(--ep-line-solid); }
+.examprint-answer-space[data-style="box"] {
+  border: var(--ep-line-solid);
+  min-height: 4cm;
+  margin-top: 0.5cm;
+  background: var(--ep-bg-shade);
+  border-radius: 4px;
+}
+.examprint-answer-space[data-style="grid"] {
+  background-size: 0.5cm 0.5cm;
+  background-image: 
+    linear-gradient(to right, var(--ep-border-shade) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ep-border-shade) 1px, transparent 1px);
+  min-height: 5cm;
+  border: 1px solid var(--ep-border-shade);
+  margin-top: 0.5cm;
+}
+
+/* Table Design Options */
+.examprint-table[data-style="standard"] th { background: #f2f2f2; }
+.examprint-table[data-style="minimal"] th, 
+.examprint-table[data-style="minimal"] td { border: none; border-bottom: 1px solid #ccc; }
+.examprint-table[data-style="minimal"] th { background: transparent; }
+.examprint-table[data-style="boxed"] { border: 2px solid #000; }
+.examprint-table[data-style="boxed"] th, 
+.examprint-table[data-style="boxed"] td { border: 1px solid #000; }
+
+/* Matching Lines Area */
+.examprint-matching-area {
+  display: flex;
+  justify-content: space-between;
+  margin: 1cm 2cm;
+  position: relative;
+}
+.examprint-matching-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cm;
+}
+.examprint-matching-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5cm;
+}
+
+/* ======================================================== */
+@media print {
+  body {
+    background: white;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .examprint-root, .examprint-root *,
+  .pagedjs_pages, .pagedjs_pages * {
+    visibility: visible;
+  }
+  /* The on-screen preview may be scaled down to fit a phone; printing always
+     uses the untouched full-size sheet. */
+  .paper-frame {
+    height: auto !important;
+  }
+  .paper-frame > * {
+    transform: none !important;
+    width: auto !important;
+  }
+  .examprint-root {
+    position: relative;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  /* If the examprint-root is deeply nested in the preview UI, 
+     we need to prevent parent paddings from squishing it, but 
+     position: absolute breaks PDF margins in some engines. 
+     We can pull it up visually using margin if needed, but 
+     for the raw PDF export, relative is much safer. */
+}
+
+.examprint-root {
+  font-family: 'Times New Roman', 'Liberation Serif', Georgia, serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  color: #000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  overflow: visible;
+  orphans: 3;
+  widows: 3;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* Print Quality & High-Resolution Graphic Rules */
+.examprint-root img,
+.examprint-root svg,
+.examprint-root canvas {
+  max-width: 100%;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  box-sizing: border-box;
+}
+
+/* Global List Formatting Rules */
+.examprint-root ul {
+  list-style-type: disc;
+  margin-top: 0.15cm;
+  margin-bottom: 0.15cm;
+  padding-left: 0.6cm;
+  box-sizing: border-box;
+}
+
+.examprint-root ol {
+  list-style-type: decimal;
+  margin-top: 0.15cm;
+  margin-bottom: 0.15cm;
+  padding-left: 0.6cm;
+  box-sizing: border-box;
+}
+
+.examprint-root li {
+  margin-bottom: 0.1cm;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* NESA Cover Page Layout */
+.examprint-cover-page {
+  page-break-after: always;
+  break-after: page;
+  height: 26.7cm;
+  max-height: 26.7cm;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 1.5cm;
+}
+
+.examprint-cover-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5cm;
+}
+
+.examprint-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.3cm;
+  width: 45%;
+}
+
+.examprint-logo-circle {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #000;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.examprint-logo-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.examprint-logo-stripe {
+  width: 5px;
+  height: 20px;
+  background: #000;
+  margin-bottom: 2px;
+}
+
+.examprint-logo-dot {
+  width: 8px;
+  height: 8px;
+  background: #000;
+  border-radius: 50%;
+}
+
+.examprint-authority-text {
+  font-size: 7.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.examprint-subject-box {
+  width: 48%;
+  border: 3px solid #000;
+  padding: 0.25cm 0.4cm;
+  text-align: center;
+}
+
+.examprint-subject-title {
+  font-size: 14pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0 0 0.1cm 0;
+  line-height: 1.2;
+}
+
+.examprint-subject-code {
+  font-size: 26pt;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  margin: 0.1cm 0;
+}
+
+.examprint-datetime {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9pt;
+  font-weight: 700;
+  margin-top: 0.15cm;
+  border-top: 1px solid #000;
+  padding-top: 0.1cm;
+}
+
+.examprint-metadata-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6cm;
+  border-top: 2px solid #000;
+  padding-top: 0.4cm;
+}
+
+.examprint-metadata-left {
+  width: 48%;
+  font-size: 10pt;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.examprint-combinations-list {
+  font-size: 9.5pt;
+  font-weight: 500;
+  padding-left: 0.3cm;
+  margin: 0.1cm 0 0.2cm 0;
+}
+
+.examprint-duration-label {
+  margin-top: 0.3cm;
+}
+
+.examprint-candidate-lines {
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cm;
+  padding-top: 0.2cm;
+}
+
+.examprint-candidate-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.2cm;
+}
+
+.examprint-candidate-dotted {
+  flex: 1;
+  border-bottom: 2px dotted #000;
+  margin-bottom: 2px;
+}
+
+.examprint-cover-middle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex: 1;
+  margin-bottom: 0.5cm;
+}
+
+.examprint-left-column {
+  width: 65%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cm;
+}
+
+.examprint-s6-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4cm;
+}
+
+.examprint-s6-title {
+  font-size: 44pt;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.examprint-booklet-title {
+  font-size: 15pt;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.examprint-exam-level {
+  font-size: 10.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+.examprint-candidate-instructions {
+  font-size: 10pt;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.examprint-candidate-instructions ol {
+  margin-top: 0.15cm;
+}
+
+.examprint-candidate-instructions li {
+  margin-bottom: 0.1cm;
+}
+
+.examprint-examiner-table-container {
+  width: 32%;
+}
+
+.examprint-examiner-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #000;
+  font-size: 8.5pt;
+  font-weight: 700;
+}
+
+.examprint-examiner-header-title {
+  background: #e5e5e5;
+  font-size: 7.5pt;
+  font-weight: 800;
+  text-align: center;
+  padding: 0.15cm 0.1cm;
+  text-transform: uppercase;
+  border-bottom: 2px solid #000 !important;
+  letter-spacing: 0.05em;
+}
+
+.examprint-examiner-col-head {
+  background: #f8f8f8;
+  font-size: 7pt;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.1cm 0.05cm;
+  height: 0.8cm;
+  vertical-align: middle;
+  border: 1px solid #000;
+}
+
+.examprint-examiner-table td {
+  border: 1px solid #000;
+  padding: 0.08cm 0.1cm;
+  height: 0.55cm;
+  box-sizing: border-box;
+}
+
+.examprint-examiner-table-container .relative {
+  position: relative;
+}
+
+.examprint-examiner-table-container .whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.examprint-cover-bottom {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.4cm;
+}
+
+.examprint-total-marks-box {
+  border: 3px solid #000;
+  padding: 0.2cm 1cm;
+  font-size: 12pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  gap: 0.2cm;
+}
+
+/* Level-based type scale */
+.examprint-level-primary .examprint-subject-title { font-size: 13pt; }
+.examprint-level-olevel .examprint-subject-title  { font-size: 14pt; }
+.examprint-level-alevel .examprint-subject-title  { font-size: 15pt; }
+
+/* Sections and questions styling */
+.examprint-section {
+  margin-top: 0.8cm;
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.examprint-section--new-page {
+  break-before: page;
+  page-break-before: always;
+}
+
+.examprint-section-heading {
+  font-size: 13pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.1cm;
+  margin-bottom: 0.4cm;
+}
+
+.examprint-keep-with-next {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.examprint-instructions {
+  font-size: 10.5pt;
+  font-weight: 700;
+  font-style: italic;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-top: 0.35cm;
+  margin-bottom: 0.35cm;
+  line-height: 1.35;
+}
+
+/* Reading Passage Layout Rules */
+.examprint-passage-unit {
+  break-inside: auto;
+  page-break-inside: auto;
+  margin-top: 0.4cm;
+  margin-bottom: 0.6cm;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examprint-passage-instruction {
+  font-size: 10.5pt;
+  font-weight: 700;
+  font-style: italic;
+  margin-top: 0.35cm;
+  margin-bottom: 0.35cm;
+  line-height: 1.35;
+  border: none;
+  padding: 0;
+  background: transparent;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.examprint-passage-title {
+  font-size: 11.5pt;
+  font-weight: 800;
+  text-align: center;
+  margin-top: 0.6cm;
+  margin-bottom: 0.8cm;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: #000;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.examprint-passage-body {
+  margin-bottom: 0.3cm;
+  font-size: 11pt;
+  line-height: 1.5;
+  text-align: justify;
+}
+
+.examprint-passage-separator {
+  border-top: 1pt solid #222222;
+  margin-top: 0.35cm;
+  margin-bottom: 0.45cm;
+  width: 100%;
+}
+
+.examprint-passage-paragraph {
+  margin-bottom: 0.3cm;
+  text-indent: 0.5cm;
+}
+
+.examprint-passage-paragraph:first-child {
+  text-indent: 0;
+}
+
+.examprint-question {
+  margin: 0.5cm 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examprint-subquestions,
+.examprint-subsubquestions {
+  margin-top: 0.4cm;
+  margin-left: 0.8cm;
+}
+
+.examprint-subquestion,
+.examprint-subsubquestion {
+  margin-bottom: 0.5cm;
+}
+
+.examprint-mcq-options,
+.examprint-truefalse,
+.examprint-table {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.examprint-question-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2cm;
+  width: 100%;
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.examprint-question-number {
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.examprint-question-text {
+  flex: 1;
+  font-size: 11pt;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.examprint-marks {
+  font-weight: 800;
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 10.5pt;
+}
+
+.examprint-mcq-options {
+  margin: 0.25cm 0 0 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  display: grid;
+  gap: 0.15cm 0.4cm;
+}
+
+.examprint-mcq-options.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.examprint-mcq-options.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.examprint-mcq-options.grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.examprint-mcq-option {
+  margin-bottom: 0.1cm;
+  break-inside: avoid;
+  display: grid;
+  grid-template-columns: 0.65cm 1fr;
+  align-items: baseline;
+  gap: 0;
+}
+
+.examprint-mcq-letter {
+  font-weight: 500 !important;
+  text-align: left;
+}
+
+.examprint-mcq-text {
+  font-weight: 400 !important;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.examprint-truefalse {
+  margin: 0.25cm 0 0 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  display: flex;
+  gap: 0.6cm;
+  align-items: center;
+}
+
+.examprint-checkbox {
+  display: inline-block;
+  width: 0.35cm;
+  height: 0.35cm;
+  border: 1px solid #000;
+  margin-right: 0.15cm;
+  vertical-align: middle;
+}
+
+.examprint-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0.3cm 0 0.2cm 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  table-layout: auto;
+}
+
+.examprint-table th, .examprint-table td {
+  border: 1.5px solid #000;
+  padding: 0.15cm 0.3cm;
+  font-size: 10.5pt;
+  text-align: left;
+  vertical-align: middle;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.examprint-table thead {
+  display: table-header-group;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.examprint-table tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.examprint-table th {
+  font-weight: 800;
+  background: #f2f2f2;
+  text-transform: uppercase;
+  font-size: 10pt;
+}
+
+.examprint-cell-dotted-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25cm;
+  padding: 0.1cm 0;
+}
+
+.examprint-cell-dotted-line {
+  border-bottom: 1.5px dotted #000;
+  height: 1px;
+  width: 100%;
+}
+
+.examprint-answer-space {
+  margin: 0.25cm 0 0 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.examprint-answer-space--xlarge {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.examprint-answer-line {
+  border-bottom: 1.5px dotted #000;
+  height: 1.0cm;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examprint-answer-line:nth-of-type(odd) {
+  break-after: avoid;
+}
+
+.examprint-endnotice {
+  text-align: center;
+  font-weight: 800;
+  margin-top: 1.2cm;
+  letter-spacing: 0.08em;
+  font-size: 11pt;
+}
+
+.examprint-page {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examprint-heading-group {
+  margin-top: 0.4cm;
+  margin-bottom: 0.4cm;
+}
+
+/* AI Mapping Engine Layouts */
+.examprint-question[data-layout="grid"] .examprint-mcq-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2rem;
+  margin-top: 0.5rem;
+}
+
+.examprint-question[data-layout="side-by-side"] {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.examprint-question[data-layout="side-by-side"] .examprint-question-row {
+  flex: 1;
+}
+
+.examprint-question[data-layout="side-by-side"] .examprint-mcq-options,
+.examprint-question[data-layout="side-by-side"] .examprint-truefalse,
+.examprint-question[data-layout="side-by-side"] .examprint-answer-space {
+  flex-shrink: 0;
+  margin-top: 0;
+  min-width: 200px;
+}
+
+.examprint-question[data-layout="grid"] .examprint-mcq-option {
+  margin-top: 0;
+}
+
+/* Composition / Essay Topic Choices Styling */
+.examprint-composition-topics {
+  margin: 0.35cm 0 0.45cm 0.8cm;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.examprint-composition-topic {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35cm;
+  line-height: 1.45;
+  font-size: 11pt;
+}
+
+.examprint-topic-label {
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 0.5cm;
+}
+
+.examprint-topic-text {
+  flex: 1;
+  font-weight: 400;
+  text-align: justify;
+}
+
+/* Ensure Composition and Essay questions keep stem together while allowing answer lines to split */
+.examprint-question[data-type="essay"] .examprint-question-row,
+.examprint-question[data-type="composition"] .examprint-question-row,
+.examprint-question[data-type="essay"] .examprint-composition-topics,
+.examprint-question[data-type="composition"] .examprint-composition-topics {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.examprint-question[data-type="essay"] .examprint-answer-space,
+.examprint-question[data-type="composition"] .examprint-answer-space,
+.examprint-question[data-type="summary"] .examprint-answer-space {
+  margin-top: 0.45cm;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+/* Calculation Question & Working Box Styling */
+.examprint-calculation-unit {
+  margin: 0.25cm 0 0.35cm 0.8cm;
+}
+
+.examprint-calculation-box {
+  border: 1pt solid #000;
+  border-radius: 0;
+  background: #ffffff;
+  margin-top: 0.35cm;
+  margin-bottom: 0.45cm;
+  margin-left: 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.examprint-calculation-workspace {
+  position: relative;
+  background-color: #ffffff;
+  min-height: 5.0cm;
+  padding: 0.25cm 0.35cm;
+  box-sizing: border-box;
+}
+
+.examprint-final-answer-row {
+  border-top: 1pt solid #000;
+  background-color: #ffffff;
+  padding: 0.2cm 0.35cm;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* SWOT Analysis 4-Quadrant Matrix Styling */
+.examprint-swot-matrix {
+  border: 2pt solid #000;
+  margin-top: 0.35cm;
+  margin-bottom: 0.45cm;
+  margin-left: 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  background: #ffffff;
+}
+
+.examprint-swot-quadrant {
+  min-height: 3.8cm;
+  padding: 0.25cm 0.35cm;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.examprint-swot-title {
+  font-weight: 800;
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #000;
+}
+
+.examprint-swot-line {
+  border-bottom: 1.5px dotted #555;
+  height: 0.7cm;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.examprint-calculation-metadata {
+  margin-bottom: 0.4cm;
+}
+
+.examprint-calculation-context {
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+  margin-bottom: 0.25cm;
+}
+
+.examprint-calculation-given-data {
+  background-color: #f9fafb;
+  border-left: 2pt solid #e5e7eb;
+  padding: 0.2cm 0.3cm;
+  font-family: inherit;
+  font-size: 10.5pt;
+}
+
+.examprint-calculation-formula {
+  font-family: "Courier New", Courier, monospace;
+  background-color: #f3f4f6;
+  padding: 0.15cm 0.3cm;
+  border-radius: 2pt;
+  display: inline-block;
+  margin-top: 0.2cm;
+}
+
+/* Summary Writing Styling */
+.examprint-summary-task-unit {
+  margin: 0.35cm 0 0.45cm 0.8cm;
+  width: calc(100% - 0.8cm);
+  box-sizing: border-box;
+}
+
+.examprint-summary-task {
+  font-size: 11pt;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 0.2cm;
+}
+
+.examprint-summary-word-limit {
+  font-size: 10.5pt;
+  font-style: italic;
+  font-weight: 700;
+  margin-bottom: 0.35cm;
+  color: #000;
+}
+
+/* Fill-in-the-Blank Formatting */
+.examprint-fillable-blank {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0 0.15cm;
+  display: inline-block;
+  min-width: 1.8cm;
+  text-align: center;
+}
+
+.examprint-candidate-cell {
+  background-color: rgba(248, 249, 250, 0.5);
+  min-height: 1cm;
+  vertical-align: middle;
+}
+
+/* ========================================================
+   PHASE 3: MARKING GUIDE & RUBRICS STYLES
+   ======================================================== */
+.marking-guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #000;
+  margin-bottom: 1cm;
+}
+
+.marking-guide-table th, 
+.marking-guide-table td {
+  border: 1px solid #000;
+  padding: 0.25cm 0.3cm;
+  text-align: left;
+  vertical-align: top;
+  font-size: 11pt;
+}
+
+.marking-guide-table th {
+  background: #f2f2f2;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 10pt;
+}
+
+.marking-guide-table td:first-child {
+  width: 1cm;
+  text-align: center;
+  font-weight: 800;
+}
+
+.marking-guide-table td:last-child {
+  width: 1.5cm;
+  text-align: center;
+  font-weight: 800;
+}
+
+.rubric-box {
+  margin-top: 0.2cm;
+  padding-left: 0.4cm;
+  border-left: 2px dashed #000;
+  font-size: 10pt;
+}
+
+.rubric-title {
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 0.1cm;
+  font-size: 9pt;
+}
+
+/* Strategy B & D: Gap-Fill and Word Bank styling */
+.examprint-word-bank {
+  page-break-inside: avoid;
+}
+
+.examprint-option-choice {
+  display: inline-block;
+  padding: 0 0.2rem;
+  margin: 0 0.1rem;
+  border-radius: 4px;
+}
+
+.examprint-option-group {
+  letter-spacing: 0.02rem;
+}

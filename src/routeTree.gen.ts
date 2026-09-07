@@ -10,33 +10,92 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ExamIdRouteImport } from './routes/exam.$id'
+import { Route as ExamIdIndexRouteImport } from './routes/exam.$id.index'
+import { Route as ExamIdEditRouteImport } from './routes/exam.$id.edit'
+import { Route as ExamIdGuideRouteImport } from './routes/exam.$id.guide'
+import { Route as ExamIdPrintRouteImport } from './routes/exam.$id.print'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExamIdRoute = ExamIdRouteImport.update({
+  id: '/exam/$id',
+  path: '/exam/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExamIdIndexRoute = ExamIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ExamIdRoute,
+} as any)
+const ExamIdEditRoute = ExamIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ExamIdRoute,
+} as any)
+const ExamIdGuideRoute = ExamIdGuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => ExamIdRoute,
+} as any)
+const ExamIdPrintRoute = ExamIdPrintRouteImport.update({
+  id: '/print',
+  path: '/print',
+  getParentRoute: () => ExamIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/exam/$id': typeof ExamIdRouteWithChildren
+  '/exam/$id/edit': typeof ExamIdEditRoute
+  '/exam/$id/guide': typeof ExamIdGuideRoute
+  '/exam/$id/print': typeof ExamIdPrintRoute
+  '/exam/$id/': typeof ExamIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/exam/$id/edit': typeof ExamIdEditRoute
+  '/exam/$id/guide': typeof ExamIdGuideRoute
+  '/exam/$id/print': typeof ExamIdPrintRoute
+  '/exam/$id': typeof ExamIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/exam/$id': typeof ExamIdRouteWithChildren
+  '/exam/$id/edit': typeof ExamIdEditRoute
+  '/exam/$id/guide': typeof ExamIdGuideRoute
+  '/exam/$id/print': typeof ExamIdPrintRoute
+  '/exam/$id/': typeof ExamIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/exam/$id'
+    | '/exam/$id/edit'
+    | '/exam/$id/guide'
+    | '/exam/$id/print'
+    | '/exam/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    '/' | '/exam/$id/edit' | '/exam/$id/guide' | '/exam/$id/print' | '/exam/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/exam/$id'
+    | '/exam/$id/edit'
+    | '/exam/$id/guide'
+    | '/exam/$id/print'
+    | '/exam/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExamIdRoute: typeof ExamIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +107,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/exam/$id': {
+      id: '/exam/$id'
+      path: '/exam/$id'
+      fullPath: '/exam/$id'
+      preLoaderRoute: typeof ExamIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exam/$id/': {
+      id: '/exam/$id/'
+      path: '/'
+      fullPath: '/exam/$id/'
+      preLoaderRoute: typeof ExamIdIndexRouteImport
+      parentRoute: typeof ExamIdRoute
+    }
+    '/exam/$id/edit': {
+      id: '/exam/$id/edit'
+      path: '/edit'
+      fullPath: '/exam/$id/edit'
+      preLoaderRoute: typeof ExamIdEditRouteImport
+      parentRoute: typeof ExamIdRoute
+    }
+    '/exam/$id/guide': {
+      id: '/exam/$id/guide'
+      path: '/guide'
+      fullPath: '/exam/$id/guide'
+      preLoaderRoute: typeof ExamIdGuideRouteImport
+      parentRoute: typeof ExamIdRoute
+    }
+    '/exam/$id/print': {
+      id: '/exam/$id/print'
+      path: '/print'
+      fullPath: '/exam/$id/print'
+      preLoaderRoute: typeof ExamIdPrintRouteImport
+      parentRoute: typeof ExamIdRoute
+    }
   }
 }
 
+interface ExamIdRouteChildren {
+  ExamIdEditRoute: typeof ExamIdEditRoute
+  ExamIdGuideRoute: typeof ExamIdGuideRoute
+  ExamIdPrintRoute: typeof ExamIdPrintRoute
+  ExamIdIndexRoute: typeof ExamIdIndexRoute
+}
+
+const ExamIdRouteChildren: ExamIdRouteChildren = {
+  ExamIdEditRoute: ExamIdEditRoute,
+  ExamIdGuideRoute: ExamIdGuideRoute,
+  ExamIdPrintRoute: ExamIdPrintRoute,
+  ExamIdIndexRoute: ExamIdIndexRoute,
+}
+
+const ExamIdRouteWithChildren =
+  ExamIdRoute._addFileChildren(ExamIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExamIdRoute: ExamIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
