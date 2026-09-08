@@ -22,6 +22,7 @@ import { makeRng, seededRotate } from '../rng';
 import { formatProfileFor, levelBand, BAND_LABEL, type LevelBand } from '../levelFormats';
 import { curriculumFor, resolveUnits } from '../../data/rebCurriculum';
 import { syllabusLines } from '../../data/curriculum';
+import { sectionRuleFor, type SectionRule } from '../examArchitecture';
 
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
 
