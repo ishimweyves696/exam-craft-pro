@@ -16,6 +16,8 @@ import {
 import { BankItem, BankType, getSubject } from './examBank';
 import { buildCanonicalExamStructure } from '../backend/engine/numberingLayoutEngine';
 import { makeRng, seededShuffle } from './rng';
+import { levelBand } from './levelFormats';
+import { sectionRuleFor } from './examArchitecture';
 import type { SourceSelectionRef } from './source/types';
 
 export type SectionKind = 'objective' | 'short' | 'essay';
