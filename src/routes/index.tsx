@@ -12,7 +12,8 @@ import {
   type ExamBuildConfig,
   type SectionSpec,
 } from "../lib/examBuilder";
-import { LEVEL_OPTIONS, formatProfileFor } from "../lib/levelFormats";
+import { LEVEL_OPTIONS, formatProfileFor, levelBand } from "../lib/levelFormats";
+import { sectionRuleFor } from "../lib/examArchitecture";
 import { StudioShell } from "../components/studio/StudioShell";
 import { SourceMaterialPanel } from "../components/source/SourceMaterialPanel";
 import { SectionSourcePicker } from "../components/source/SectionSourcePicker";
@@ -413,7 +414,7 @@ function ConfigPage() {
                             key={opt.type}
                             type="button"
                             aria-pressed={active}
-                            onClick={() => toggleType(section, opt.type)}
+                            onClick={() => toggleType(section, i, opt.type)}
                             title={opt.marks}
                             className={
                               active
