@@ -36,6 +36,8 @@ export interface TypeQuota {
   request: number;
   /** Book excerpts this batch must be written from, when the teacher gave any. */
   excerpts?: MaterialExcerpt[];
+  /** The subject's fixed rule for this section: what it exists to test. */
+  rule?: SectionRule;
 }
 
 export interface ExamPlan {
