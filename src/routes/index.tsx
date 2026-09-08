@@ -138,8 +138,17 @@ function ConfigPage() {
       sectionPlan: (c.sectionPlan ?? []).filter((s) => s.id !== id),
     }));
 
-  const toggleType = (section: SectionSpec, type: BankType) => {
+  /** The subject's fixed rule for a section, matched by id then by position. */
+  const ruleFor = (section: SectionSpec, index: number) =>
+    sectionRuleFor(subject.name, levelBand(config.level), section.id, index);
+
+  const toggleType = (section: SectionSpec, index: number, type: BankType) => {
+    const rule = ruleFor(section, index);
+    // ARCHITECTURE GUARD: a type this section may not contain can never be
+    // switched on, and the last remaining allowed type can never be removed.
+    if (rule && !rule.allowed.includes(type)) return;
     const has = section.types.includes(type);
+    if (has && section.types.length === 1) return;
     const next = has
       ? section.types.filter((t) => t !== type)
       : QUESTION_TYPE_OPTIONS.map((o) => o.type).filter(
