@@ -169,7 +169,7 @@ const MATHEMATICS: Partial<Record<LevelBand, SubjectArchitecture>> = {
         marks: 55,
         minutes: 95,
         types: ['short_answer'],
-        allowed: ['short_answer', 'structured'],
+        allowed: ['short_answer', 'structured', 'mcq'],
         answerLength: 'short',
         cognitive: 'application',
         purpose: 'Compulsory computations covering the breadth of the syllabus units.',
