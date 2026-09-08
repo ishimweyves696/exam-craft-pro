@@ -43,6 +43,7 @@ interface Job {
   sectionId: string;
   request: number;
   excerpts?: MaterialExcerpt[];
+  rule?: SectionRule;
 }
 
 async function batch(
@@ -61,13 +62,17 @@ async function batch(
       : undefined;
   const data = await callGatewayJson<{ questions: Partial<BankItem>[] }>({
     instructions: SYSTEM_INSTRUCTIONS,
-    input: buildPrompt(plan, type, count, feedback, material),
+    input: buildPrompt(plan, type, count, feedback, material, job.rule),
     schemaName: `${type}_batch`,
     schema: batchSchema(type),
     effort: type === 'structured' || type === 'essay' ? 'medium' : 'low',
   });
   // The section tag is a CONTENT routing decision made in code, never by the
   // model: items written from a section's book units stay in that section.
+  // ARCHITECTURE GUARD: an item of a type this section may not contain is
+  // dropped here, before it can ever reach the paper.
+  const allowed = job.rule?.allowed;
+  if (allowed && !allowed.includes(type)) return [];
   return (data.questions ?? []).map(
     (q) => ({ ...q, type, sectionId: job.sectionId }) as BankItem,
   );
