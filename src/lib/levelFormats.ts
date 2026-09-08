@@ -13,6 +13,11 @@
 import type { BankType } from './examBank';
 import type { SectionSpec } from './examBuilder';
 import { getBlueprint, type NesaBlueprint } from '../data/nesaBlueprints';
+import {
+  architectureFor,
+  ANSWER_LENGTH_LABEL,
+  COGNITIVE_LABEL,
+} from './examArchitecture';
 
 export type LevelBand = 'primary' | 'olevel' | 'alevel';
 
@@ -194,9 +199,39 @@ export interface FormatProfile {
 /**
  * The official paper architecture for a subject at a level: sections, their
  * marks, the question types each may contain, and the paper's length.
+ *
+ * Order of authority:
+ *   1. the subject's own examination architecture (examArchitecture.ts)
+ *   2. the NESA blueprint for the subject
+ *   3. the generic band plan
  */
 export function formatProfileFor(subjectName: string, level: string): FormatProfile {
   const band = levelBand(level);
+  const arch = architectureFor(subjectName, band);
+
+  if (arch) {
+    return {
+      band,
+      bandLabel: BAND_LABEL[band],
+      duration: arch.duration,
+      totalMarks: arch.totalMarks,
+      sections: arch.sections.map((s) => ({
+        id: s.id,
+        name: s.name,
+        marks: s.marks,
+        types: [...s.types],
+      })),
+      conventions: [
+        ...arch.sections.map(
+          (s) =>
+            `${s.name} — ${s.marks} marks, about ${s.minutes} minutes, ${COGNITIVE_LABEL[s.cognitive]}, answers of ${ANSWER_LENGTH_LABEL[s.answerLength]}. ${s.purpose}`,
+        ),
+        ...BAND_CONVENTIONS[band],
+      ],
+      sourceLabel: arch.label,
+    };
+  }
+
   const bp = blueprintFor(subjectName, level);
 
   let sections: SectionSpec[] = BAND_PLAN[band].map((s) => ({ ...s }));
@@ -235,3 +270,4 @@ export function formatProfileFor(subjectName: string, level: string): FormatProf
     sourceLabel,
   };
 }
+

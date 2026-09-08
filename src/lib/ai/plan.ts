@@ -21,6 +21,9 @@ import {
 import { makeRng, seededRotate } from '../rng';
 import { formatProfileFor, levelBand, BAND_LABEL, type LevelBand } from '../levelFormats';
 import { curriculumFor, resolveUnits } from '../../data/rebCurriculum';
+import { syllabusLines } from '../../data/curriculum';
+import { sectionRuleFor, type SectionRule } from '../examArchitecture';
+
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
 
 export interface TypeQuota {
@@ -34,6 +37,8 @@ export interface TypeQuota {
   request: number;
   /** Book excerpts this batch must be written from, when the teacher gave any. */
   excerpts?: MaterialExcerpt[];
+  /** The subject's fixed rule for this section: what it exists to test. */
+  rule?: SectionRule;
 }
 
 export interface ExamPlan {
@@ -50,6 +55,9 @@ export interface ExamPlan {
   bloomEmphasis: string;
   /** REB/CBC curriculum units this paper must examine. */
   units: string[];
+  /** Verified syllabus lines: unit, term and its sub-topics. Content bound. */
+  syllabus: string[];
+
   /** CBC key competences the paper must assess. */
   competences: string[];
   /** NESA blueprint section purposes for the subject/level, when one exists. */
@@ -105,27 +113,40 @@ export function planExam(
   material?: MaterialPayload,
 ): ExamPlan {
   const specs = resolveSectionPlan(config);
+  const band = levelBand(config.level);
   /** key = `${sectionId}|${type}` — quotas are per section so a section can be
    * tied to its own book units. */
-  const needed = new Map<string, { sectionId: string; sectionName: string; type: BankType; count: number }>();
+  const needed = new Map<
+    string,
+    { sectionId: string; sectionName: string; type: BankType; count: number; rule?: SectionRule }
+  >();
 
-  const bump = (sectionId: string, sectionName: string, type: BankType, count: number) => {
+  const bump = (
+    sectionId: string,
+    sectionName: string,
+    type: BankType,
+    count: number,
+    rule?: SectionRule,
+  ) => {
     const key = `${sectionId}|${type}`;
     const prev = needed.get(key);
     if (prev) prev.count += Math.max(0, count);
-    else needed.set(key, { sectionId, sectionName, type, count: Math.max(0, count) });
+    else needed.set(key, { sectionId, sectionName, type, count: Math.max(0, count), rule });
   };
 
   // The teacher owns each section's marks and question types; the AI is only
   // told how many items of each type the paper needs to be exactly filled.
-  specs.forEach((spec) => {
+  // The subject's examination architecture decides which types may appear at
+  // all in a section — resolveSectionPlan has already enforced that.
+  specs.forEach((spec, index) => {
+    const rule = sectionRuleFor(subjectName, band, spec.id, index);
     const types = spec.types;
     const shares = types.map(() => spec.marks / types.length);
     types.forEach((t, i) => {
       // structured items are worth ~10 marks in practice (3 parts), not the
       // nominal single-question value; plan against the realistic weight.
       const weight = t === 'structured' ? 10 : MARKS_BY_TYPE[t];
-      bump(spec.id, spec.name, t, Math.max(1, Math.round(shares[i] / weight)));
+      bump(spec.id, spec.name, t, Math.max(1, Math.round(shares[i] / weight)), rule);
     });
   });
 
@@ -147,8 +168,10 @@ export function planExam(
       needed: n,
       request,
       excerpts: excerpts?.length ? excerpts : undefined,
+      rule: entry.rule,
     };
   });
+
 
   const rng = makeRng(config.seed || 1);
   const curriculum = curriculumFor(config.subjectId, config.level);
@@ -175,6 +198,8 @@ export function planExam(
     quotas: quotas.filter((q) => q.request > 0),
     topics,
     units: allTopics,
+    syllabus: syllabusLines(config.subjectId, config.level, config.units),
+
     competences: curriculum.competences,
     blueprintNotes: blueprintNotesFor(subjectName, config.level),
     band: levelBand(config.level),

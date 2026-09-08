@@ -17,6 +17,8 @@ import { StudioShell } from "../components/studio/StudioShell";
 import { SourceMaterialPanel } from "../components/source/SourceMaterialPanel";
 import { SectionSourcePicker } from "../components/source/SectionSourcePicker";
 import type { SourceBook, SourceSelectionRef } from "../lib/source/types";
+import { CurriculumPanel } from "../components/CurriculumPanel";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -136,8 +138,17 @@ function ConfigPage() {
       sectionPlan: (c.sectionPlan ?? []).filter((s) => s.id !== id),
     }));
 
-  const toggleType = (section: SectionSpec, type: BankType) => {
+  /** The subject's fixed rule for a section, matched by id then by position. */
+  const ruleFor = (section: SectionSpec, index: number) =>
+    sectionRuleFor(subject.name, levelBand(config.level), section.id, index);
+
+  const toggleType = (section: SectionSpec, index: number, type: BankType) => {
+    const rule = ruleFor(section, index);
+    // ARCHITECTURE GUARD: a type this section may not contain can never be
+    // switched on, and the last remaining allowed type can never be removed.
+    if (rule && !rule.allowed.includes(type)) return;
     const has = section.types.includes(type);
+    if (has && section.types.length === 1) return;
     const next = has
       ? section.types.filter((t) => t !== type)
       : QUESTION_TYPE_OPTIONS.map((o) => o.type).filter(
@@ -301,12 +312,21 @@ function ConfigPage() {
             </div>
           </section>
 
+          <CurriculumPanel
+            subjectId={config.subjectId}
+            subjectName={subject.name}
+            level={config.level}
+            selected={config.units ?? []}
+            onChange={(units) => set("units", units)}
+          />
+
           <SourceMaterialPanel
             book={book}
             selection={config.sourceMaterial}
             onBook={setBook}
             onSelection={setSourceSelection}
           />
+
 
           <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">

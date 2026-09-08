@@ -9,6 +9,11 @@
 import type { BankType } from '../examBank';
 import type { ExamPlan } from './plan';
 import type { MaterialExcerpt } from '../source/types';
+import {
+  ANSWER_LENGTH_LABEL,
+  COGNITIVE_LABEL,
+  type SectionRule,
+} from '../examArchitecture';
 
 export const SYSTEM_INSTRUCTIONS = `You are a senior Rwandan secondary-school examiner writing items for a NESA-standard end-of-term paper.
 
@@ -58,6 +63,7 @@ export function buildPrompt(
   count: number,
   feedback?: string,
   material?: { excerpts: MaterialExcerpt[]; bookTitle: string; strictness: 'book_only' | 'book_first' },
+  section?: SectionRule,
 ) {
   const topics = plan.topics.slice(0, 8).join('; ');
   const parts = [
@@ -68,6 +74,17 @@ export function buildPrompt(
     `REB syllabus units for this level — you may ONLY examine content that belongs to these units: ${topics}`,
     `Key competences the paper must assess: ${plan.competences.join('; ')}`,
   ];
+  if (section) {
+    parts.push(
+      '',
+      `SECTION CONTRACT — these items are written for "${section.name}" and must fit it exactly:`,
+      `- Purpose of this section: ${section.purpose}`,
+      `- Dominant cognitive demand: ${COGNITIVE_LABEL[section.cognitive]}. Do not write items below or above this demand.`,
+      `- Expected answer length: ${ANSWER_LENGTH_LABEL[section.answerLength]}.`,
+      `- The whole section is worth ${section.marks} marks and a candidate has about ${section.minutes} minutes for it, so each item must be answerable in the time one item of this section deserves.`,
+      `- Items belonging in another section of this paper are invalid here.`,
+    );
+  }
   parts.push(
     `Paper conventions for a ${plan.band === 'primary' ? 'Primary' : plan.band === 'olevel' ? 'O-Level' : 'A-Level'} ${plan.subjectName} paper — the items you write must fit them:`,
     ...plan.blueprintNotes.slice(0, 8).map((n) => `- ${n}`),
