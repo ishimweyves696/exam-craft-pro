@@ -140,18 +140,38 @@ export function planTotalMarks(plan: SectionSpec[]): number {
   return plan.reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
 }
 
-/** Sections the teacher configured, falling back to the standard NESA layout. */
+/**
+ * Sections the teacher configured, falling back to the standard NESA layout.
+ *
+ * ARCHITECTURE GUARD: whatever the teacher edited, a section may only carry
+ * question types that the subject's examination architecture allows in that
+ * section. A disallowed type is dropped; if nothing is left, the section falls
+ * back to the official default types for that section.
+ */
 export function resolveSectionPlan(config: ExamBuildConfig): SectionSpec[] {
+  const subjectName = getSubject(config.subjectId)?.name ?? '';
+  const band = levelBand(config.level);
+
+  const guard = (specs: SectionSpec[]): SectionSpec[] =>
+    specs.map((spec, i) => {
+      const rule = sectionRuleFor(subjectName, band, spec.id, i);
+      if (!rule) return spec;
+      const kept = spec.types.filter((t) => rule.allowed.includes(t));
+      return { ...spec, types: kept.length ? kept : [...rule.types] };
+    });
+
   const plan = (config.sectionPlan ?? []).filter((s) => s.types.length > 0 && s.marks > 0);
-  if (plan.length) return plan;
+  if (plan.length) return guard(plan);
   const kinds = config.sections.length ? config.sections : DEFAULT_CONFIG.sections;
   const budgets = splitMarks(config.totalMarks, kinds);
-  return kinds.map((kind, i) => ({
-    id: `sec_${i + 1}`,
-    name: SECTION_TITLES[kind],
-    marks: budgets[i],
-    types: SECTION_TYPES[kind],
-  }));
+  return guard(
+    kinds.map((kind, i) => ({
+      id: `sec_${i + 1}`,
+      name: SECTION_TITLES[kind],
+      marks: budgets[i],
+      types: SECTION_TYPES[kind],
+    })),
+  );
 }
 
 
