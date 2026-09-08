@@ -21,6 +21,8 @@ import {
 import { makeRng, seededRotate } from '../rng';
 import { formatProfileFor, levelBand, BAND_LABEL, type LevelBand } from '../levelFormats';
 import { curriculumFor, resolveUnits } from '../../data/rebCurriculum';
+import { syllabusLines } from '../../data/curriculum';
+
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
 
 export interface TypeQuota {
@@ -50,6 +52,9 @@ export interface ExamPlan {
   bloomEmphasis: string;
   /** REB/CBC curriculum units this paper must examine. */
   units: string[];
+  /** Verified syllabus lines: unit, term and its sub-topics. Content bound. */
+  syllabus: string[];
+
   /** CBC key competences the paper must assess. */
   competences: string[];
   /** NESA blueprint section purposes for the subject/level, when one exists. */
@@ -175,6 +180,8 @@ export function planExam(
     quotas: quotas.filter((q) => q.request > 0),
     topics,
     units: allTopics,
+    syllabus: syllabusLines(config.subjectId, config.level, config.units),
+
     competences: curriculum.competences,
     blueprintNotes: blueprintNotesFor(subjectName, config.level),
     band: levelBand(config.level),

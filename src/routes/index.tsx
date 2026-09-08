@@ -17,6 +17,8 @@ import { StudioShell } from "../components/studio/StudioShell";
 import { SourceMaterialPanel } from "../components/source/SourceMaterialPanel";
 import { SectionSourcePicker } from "../components/source/SectionSourcePicker";
 import type { SourceBook, SourceSelectionRef } from "../lib/source/types";
+import { CurriculumPanel } from "../components/CurriculumPanel";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -301,12 +303,21 @@ function ConfigPage() {
             </div>
           </section>
 
+          <CurriculumPanel
+            subjectId={config.subjectId}
+            subjectName={subject.name}
+            level={config.level}
+            selected={config.units ?? []}
+            onChange={(units) => set("units", units)}
+          />
+
           <SourceMaterialPanel
             book={book}
             selection={config.sourceMaterial}
             onBook={setBook}
             onSelection={setSourceSelection}
           />
+
 
           <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">

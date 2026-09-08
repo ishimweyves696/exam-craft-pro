@@ -14,7 +14,10 @@
  * and shown to the teacher as selectable coverage.
  */
 
+import { levelCurriculum } from './curriculum';
+
 export interface CurriculumEntry {
+
   /** Competences the paper must assess (CBC "key competences"). */
   competences: string[];
   /** Syllabus units for the level, in teaching order. */
@@ -655,9 +658,19 @@ const FALLBACK: CurriculumEntry = {
   ],
 };
 
+/**
+ * The detailed curriculum map (src/data/curriculum) is authoritative: it carries
+ * the unit, the term it is taught in, and the sub-topics. This flat table stays
+ * as the fallback for any subject/level not yet mapped in detail.
+ */
 export function curriculumFor(subjectId: string, level: string): CurriculumEntry {
+  const detailed = levelCurriculum(subjectId, level);
+  if (detailed?.units.length) {
+    return { competences: detailed.competences, units: detailed.units.map((u) => u.title) };
+  }
   return REB_CURRICULUM[K(subjectId, level)] ?? FALLBACK;
 }
+
 
 /** Units for a subject/level — the selectable coverage shown to the teacher. */
 export function unitsFor(subjectId: string, level: string): string[] {
