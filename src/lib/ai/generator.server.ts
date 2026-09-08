@@ -151,6 +151,7 @@ export async function generateExamContent(
     sectionId: q.sectionId,
     request,
     excerpts: q.excerpts,
+    rule: q.rule,
   });
 
   await runPass(plan.quotas.map((q) => asJob(q, q.request)));
