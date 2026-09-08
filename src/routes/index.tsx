@@ -13,7 +13,11 @@ import {
   type SectionSpec,
 } from "../lib/examBuilder";
 import { LEVEL_OPTIONS, formatProfileFor, levelBand } from "../lib/levelFormats";
-import { sectionRuleFor } from "../lib/examArchitecture";
+import {
+  sectionRuleFor,
+  ANSWER_LENGTH_LABEL,
+  COGNITIVE_LABEL,
+} from "../lib/examArchitecture";
 import { StudioShell } from "../components/studio/StudioShell";
 import { SourceMaterialPanel } from "../components/source/SourceMaterialPanel";
 import { SectionSourcePicker } from "../components/source/SectionSourcePicker";
@@ -404,22 +408,55 @@ function ConfigPage() {
                     </label>
                   </div>
 
+                  {(() => {
+                    const rule = ruleFor(section, i);
+                    if (!rule) return null;
+                    return (
+                      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+                        <span className="rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground">
+                          Official: {rule.marks} marks
+                        </span>
+                        <span className="rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground">
+                          about {rule.minutes} minutes
+                        </span>
+                        <span className="rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground">
+                          {COGNITIVE_LABEL[rule.cognitive]}
+                        </span>
+                        <span className="rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground">
+                          answers of {ANSWER_LENGTH_LABEL[rule.answerLength]}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   <div className="mt-3">
                     <span className="text-xs font-medium text-muted-foreground">Question types</span>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {QUESTION_TYPE_OPTIONS.map((opt) => {
+                        const rule = ruleFor(section, i);
+                        const blocked = !!rule && !rule.allowed.includes(opt.type);
                         const active = section.types.includes(opt.type);
+                        const locked = active && section.types.length === 1;
                         return (
                           <button
                             key={opt.type}
                             type="button"
                             aria-pressed={active}
+                            disabled={blocked}
                             onClick={() => toggleType(section, i, opt.type)}
-                            title={opt.marks}
+                            title={
+                              blocked
+                                ? `${opt.label} does not belong in this section of a ${subject.name} paper`
+                                : locked
+                                  ? 'A section needs at least one question type'
+                                  : opt.marks
+                            }
                             className={
-                              active
-                                ? "rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
-                                : "rounded-full border border-input px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-accent"
+                              blocked
+                                ? "cursor-not-allowed rounded-full border border-dashed border-input px-3 py-1.5 text-xs text-muted-foreground/60"
+                                : active
+                                  ? "rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                                  : "rounded-full border border-input px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-accent"
                             }
                           >
                             {opt.label}
@@ -436,7 +473,18 @@ function ConfigPage() {
                         {instructionsForTypes(section.types)}
                       </p>
                     )}
+                    {(() => {
+                      const rule = ruleFor(section, i);
+                      if (!rule) return null;
+                      return (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Greyed-out types are not used in this section of a {subject.name}{' '}
+                          {config.level} paper. {rule.purpose}
+                        </p>
+                      );
+                    })()}
                   </div>
+
 
                   {book && config.sourceMaterial?.nodeIds.length ? (
                     <SectionSourcePicker
