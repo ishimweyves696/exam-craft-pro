@@ -13,6 +13,11 @@
 import type { BankType } from './examBank';
 import type { SectionSpec } from './examBuilder';
 import { getBlueprint, type NesaBlueprint } from '../data/nesaBlueprints';
+import {
+  architectureFor,
+  ANSWER_LENGTH_LABEL,
+  COGNITIVE_LABEL,
+} from './examArchitecture';
 
 export type LevelBand = 'primary' | 'olevel' | 'alevel';
 
