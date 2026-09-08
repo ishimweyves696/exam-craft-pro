@@ -9,6 +9,11 @@
 import type { BankType } from '../examBank';
 import type { ExamPlan } from './plan';
 import type { MaterialExcerpt } from '../source/types';
+import {
+  ANSWER_LENGTH_LABEL,
+  COGNITIVE_LABEL,
+  type SectionRule,
+} from '../examArchitecture';
 
 export const SYSTEM_INSTRUCTIONS = `You are a senior Rwandan secondary-school examiner writing items for a NESA-standard end-of-term paper.
 
