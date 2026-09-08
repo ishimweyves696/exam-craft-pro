@@ -21,6 +21,7 @@ import { buildPrompt, SYSTEM_INSTRUCTIONS } from './prompts';
 import { callGatewayJson, GatewayError } from './gateway.server';
 import { validateItems } from './validate';
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
+import type { SectionRule } from '../examArchitecture';
 
 export interface GenerationResult {
   items: BankItem[];
