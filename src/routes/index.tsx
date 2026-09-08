@@ -414,7 +414,7 @@ function ConfigPage() {
                             key={opt.type}
                             type="button"
                             aria-pressed={active}
-                            onClick={() => toggleType(section, opt.type)}
+                            onClick={() => toggleType(section, i, opt.type)}
                             title={opt.marks}
                             className={
                               active
