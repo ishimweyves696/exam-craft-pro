@@ -128,6 +128,10 @@ export function planExam(
   /** Advanced sub-part shape the teacher asked for, per section. */
   const shape = new Map<string, { subMin?: number; subMax?: number; partsPerSub?: number }>();
 
+  /** The subject's fixed architecture rule per section, when it has one. */
+  const rules = new Map<string, SectionRule>();
+
+
   const bump = (sectionId: string, sectionName: string, type: BankType, count: number) => {
     const key = `${sectionId}|${type}`;
     const prev = needed.get(key);
