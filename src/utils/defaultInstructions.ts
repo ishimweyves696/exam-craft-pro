@@ -17,6 +17,9 @@ const DEFAULT_TYPE_INSTRUCTIONS: Record<string, Record<string, (q: { tableData?:
     short_answer: () => `Provide a concise answer to the question.`,
     essay: () => `Write a comprehensive response answering all parts of the question.`,
     case_study: () => `Read the scenario carefully and answer the questions that follow.`,
+    comprehension: () => `Read the passage below carefully and answer the questions that follow.`,
+    swot: () => `Complete the SWOT matrix below using the information given.`,
+    matrix: () => `Complete the matrix below using the information given.`,
     transformation: () => `Rewrite the sentence according to the instructions given.`,
     sentence_rewriting: () => `Rewrite the sentence correctly as instructed.`,
     reorder: () => `Reorder the words or sentences to form a coherent sequence.`,
@@ -107,7 +110,7 @@ export function isSelfContainedQuestion(text?: string): boolean {
 
   const imperativePatterns = [
     // EN
-    /^(state|define|calculate|explain|which|give|what|why|how|outline|describe|discuss|compare|differentiate|list|name|show|solve|find|evaluate|prove|identify|highlight|mention|delineate|distinguish|compute|write|complete|fill|provide|rewrite)\b/i,
+    /^(state|define|calculate|explain|which|give|what|why|how|outline|describe|discuss|compare|differentiate|list|name|show|solve|find|evaluate|prove|identify|highlight|mention|delineate|distinguish|compute|write|complete|fill|provide|rewrite|choose|carry|study|read|match|summarise|summarize|draw|plot|arrange|correct|translate|use)\b/i,
     // FR
     /^(définissez|définir|expliquez|expliquer|calculez|calculer|donnez|donner|quel|quelle|quels|quelles|pourquoi|comment|décrivez|décrire|comparez|comparer|démontrez|prouver|identifiez|identifier|nommez|nommer|résolvez|trouver|évaluez|écrivez|complétez|remplissez|fournissez|réécrivez)\b/i,
     // RW
@@ -151,7 +154,11 @@ export function resolveInstruction(
   const targetLang = normalizeLanguage(lang);
 
   // Rule 1: Direct questions that do not need a separate instruction
-  const directTypes = new Set(['short', 'short_answer', 'essay', 'calculation', 'one_word']);
+  const directTypes = new Set([
+    'short', 'short_answer', 'essay', 'calculation', 'one_word',
+    'composition', 'swot', 'matrix', 'table', 'summary',
+    'transformation', 'error_correction',
+  ]);
   if (directTypes.has(type) && isSelfContainedQuestion(q.text)) {
     return "";
   }

@@ -15,14 +15,15 @@ import {
   MARKS_BY_TYPE,
   planTotalMarks,
   resolveSectionPlan,
+  defaultLanguageFor,
   type ExamBuildConfig,
+  type PaperLanguage,
   type SectionKind,
 } from '../examBuilder';
 import { makeRng, seededRotate } from '../rng';
 import { formatProfileFor, levelBand, BAND_LABEL, type LevelBand } from '../levelFormats';
 import { curriculumFor, resolveUnits } from '../../data/rebCurriculum';
 import { syllabusLines } from '../../data/curriculum';
-import { sectionRuleFor, type SectionRule } from '../examArchitecture';
 
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
 
@@ -37,8 +38,10 @@ export interface TypeQuota {
   request: number;
   /** Book excerpts this batch must be written from, when the teacher gave any. */
   excerpts?: MaterialExcerpt[];
-  /** The subject's fixed rule for this section: what it exists to test. */
-  rule?: SectionRule;
+  /** Advanced shape asked for by the teacher: sub-parts per structured item. */
+  subMin?: number;
+  subMax?: number;
+  partsPerSub?: number;
 }
 
 export interface ExamPlan {
@@ -69,6 +72,8 @@ export interface ExamPlan {
   seed: number;
   /** Uploaded book context for the whole paper, when the teacher supplied one. */
   material?: MaterialPayload;
+  /** Language the questions must be written in. */
+  language: PaperLanguage;
 }
 
 const BLOOM_CYCLES = [
@@ -113,40 +118,42 @@ export function planExam(
   material?: MaterialPayload,
 ): ExamPlan {
   const specs = resolveSectionPlan(config);
-  const band = levelBand(config.level);
   /** key = `${sectionId}|${type}` — quotas are per section so a section can be
    * tied to its own book units. */
-  const needed = new Map<
-    string,
-    { sectionId: string; sectionName: string; type: BankType; count: number; rule?: SectionRule }
-  >();
+  const needed = new Map<string, { sectionId: string; sectionName: string; type: BankType; count: number }>();
 
-  const bump = (
-    sectionId: string,
-    sectionName: string,
-    type: BankType,
-    count: number,
-    rule?: SectionRule,
-  ) => {
+  /** Advanced sub-part shape the teacher asked for, per section. */
+  const shape = new Map<string, { subMin?: number; subMax?: number; partsPerSub?: number }>();
+
+  const bump = (sectionId: string, sectionName: string, type: BankType, count: number) => {
     const key = `${sectionId}|${type}`;
     const prev = needed.get(key);
     if (prev) prev.count += Math.max(0, count);
-    else needed.set(key, { sectionId, sectionName, type, count: Math.max(0, count), rule });
+    else needed.set(key, { sectionId, sectionName, type, count: Math.max(0, count) });
   };
 
   // The teacher owns each section's marks and question types; the AI is only
   // told how many items of each type the paper needs to be exactly filled.
-  // The subject's examination architecture decides which types may appear at
-  // all in a section — resolveSectionPlan has already enforced that.
-  specs.forEach((spec, index) => {
-    const rule = sectionRuleFor(subjectName, band, spec.id, index);
+  specs.forEach((spec) => {
     const types = spec.types;
+    shape.set(spec.id, {
+      subMin: spec.subMin,
+      subMax: spec.subMax,
+      partsPerSub: spec.partsPerSub,
+    });
+    const wanted = Math.max(0, Math.floor(spec.questionCount ?? 0));
+    if (wanted > 0) {
+      // The teacher fixed the number of questions: split it across the types.
+      const per = Math.max(1, Math.round(wanted / types.length));
+      types.forEach((t) => bump(spec.id, spec.name, t, per));
+      return;
+    }
     const shares = types.map(() => spec.marks / types.length);
     types.forEach((t, i) => {
       // structured items are worth ~10 marks in practice (3 parts), not the
       // nominal single-question value; plan against the realistic weight.
       const weight = t === 'structured' ? 10 : MARKS_BY_TYPE[t];
-      bump(spec.id, spec.name, t, Math.max(1, Math.round(shares[i] / weight)), rule);
+      bump(spec.id, spec.name, t, Math.max(1, Math.round(shares[i] / weight)));
     });
   });
 
@@ -168,10 +175,9 @@ export function planExam(
       needed: n,
       request,
       excerpts: excerpts?.length ? excerpts : undefined,
-      rule: entry.rule,
+      ...(shape.get(entry.sectionId) ?? {}),
     };
   });
-
 
   const rng = makeRng(config.seed || 1);
   const curriculum = curriculumFor(config.subjectId, config.level);
@@ -206,6 +212,7 @@ export function planExam(
     bandLabel: BAND_LABEL[levelBand(config.level)],
     bloomEmphasis,
     material,
+    language: config.language ?? defaultLanguageFor(config.subjectId),
     seed: config.seed || 1,
 
   };

@@ -104,7 +104,10 @@ export const QuestionInstructions: React.FC<{
 };
 
 const CalculationMetadata: React.FC<{ item: GenericQuestionItem }> = ({ item }) => {
-  if (!item.context && !item.givenData) return null;
+  // Fixed rule: a calculation prints its given data once, inside the working frame.
+  const isCalculation = getQuestionSpec(item.type).id === 'calculation';
+  const showGiven = Boolean(item.givenData) && !isCalculation;
+  if (!item.context && !showGiven) return null;
 
   return (
     <div className="examprint-calculation-metadata mb-2 pl-8">
@@ -113,10 +116,10 @@ const CalculationMetadata: React.FC<{ item: GenericQuestionItem }> = ({ item }) 
           <QuestionText text={item.context} />
         </div>
       )}
-      {item.givenData && (
+      {showGiven && (
         <div className="examprint-calculation-given-data p-2 bg-slate-50 border-l-2 border-slate-200 text-sm">
           <div className="font-semibold text-xs uppercase tracking-wider text-slate-500 mb-1">Given Data:</div>
-          <QuestionText text={item.givenData} />
+          <QuestionText text={item.givenData ?? ''} />
         </div>
       )}
     </div>
@@ -180,7 +183,7 @@ const QuestionContent: React.FC<{
   language?: string;
   forcedInstructions?: string[];
   suppressInstruction?: boolean;
-}> = ({ item, language }) => {
+}> = ({ item, language, suppressInstruction }) => {
   const spec = getQuestionSpec(item.type);
   const canonicalType = spec.id;
   const hasSubQuestions = Boolean(item.subQuestions && item.subQuestions.length > 0);
@@ -240,14 +243,17 @@ const QuestionContent: React.FC<{
           wordLimit={item.wordLimit}
           marks={item.marks}
           language={language}
-          customInstruction={item.summaryTask}
+          customInstruction={suppressInstruction ? undefined : item.summaryTask}
+          hideNote={Boolean(
+            item.summaryTask && item.wordLimit && new RegExp(String(item.wordLimit)).test(item.summaryTask),
+          )}
         />
       ) : null}
 
       {(canonicalType === 'transformation' || item.type === 'transformation') && (
         <SentenceTransformationBlock
-          originalSentence={item.text}
           marks={item.marks}
+          items={[{ id: item.id, originalSentence: '', marks: item.marks }]}
         />
       )}
 
@@ -513,44 +519,57 @@ export const QuestionBlock: React.FC<{
           <span className="examprint-marks ml-auto">({markLabel(q.marks, language)})</span>
         </div>
 
-        {/* Summary Task - Positioning above passage if it exists for summary types */}
-        {q.type === 'summary' && (q.summaryTask || q.wordLimit) && (
-          <div className="examprint-summary-task-top mb-4">
-            {q.summaryTask && (
-              <div className="examprint-summary-task font-semibold mb-1">
-                <QuestionText text={q.summaryTask} />
-              </div>
-            )}
-            {q.wordLimit && (
-              <div className="examprint-summary-word-limit italic text-[0.9em]">
-                (Word limit: {q.wordLimit} words)
-              </div>
-            )}
-          </div>
-        )}
+        {/* Passage Instruction with consistent bottom space.
+            Fixed rule: a summary item prints its task below the passage, so a
+            second sentence that only repeats "summarise…" is never printed. */}
+        {(() => {
+          const inst = (parsedPassage.instruction || sectionInstruction || '').replace(/\*/g, '');
+          if (!inst) return null;
+          if (q.type === 'summary' && q.summaryTask && /summar/i.test(inst)) return null;
+          return (
+            <div className="examprint-passage-instruction">
+              <QuestionText text={inst} disableEmphasis />
+            </div>
+          );
+        })()}
 
-        {/* Passage Instruction with consistent bottom space */}
-        {(parsedPassage.instruction || sectionInstruction) && (
-          <div className="examprint-passage-instruction">
-            <QuestionText text={(parsedPassage.instruction || sectionInstruction || '').replace(/\*/g, '')} />
-          </div>
-        )}
 
         {/* Passage Title - Only rendered if explicit title exists */}
         {parsedPassage.title ? (
           <div className="examprint-passage-title">
-            <strong><QuestionText text={parsedPassage.title} /></strong>
+            <strong><QuestionText text={parsedPassage.title} disableEmphasis /></strong>
           </div>
         ) : null}
 
-        {/* Passage Body - Continuous block of text */}
+        {/* Passage Body - Continuous block of text, printed as plain prose */}
         <div className="examprint-passage-body">
           {parsedPassage.bodyParagraphs.map((paragraph, pIdx) => (
             <p key={pIdx} className="examprint-passage-paragraph">
-              <QuestionText text={paragraph} />
+              <QuestionText text={paragraph} disableEmphasis />
             </p>
           ))}
         </div>
+
+        {/* Summary task always follows the passage it refers to, stated once. */}
+        {q.type === 'summary' && (q.summaryTask || q.wordLimit) && (() => {
+          const task = q.summaryTask || '';
+          const limitStated = q.wordLimit ? new RegExp(String(q.wordLimit)).test(task) : true;
+          return (
+            <div className="examprint-summary-task-top">
+              {task && (
+                <div className="examprint-summary-task">
+                  <QuestionText text={task} />
+                </div>
+              )}
+              {q.wordLimit && !limitStated && (
+                <div className="examprint-summary-word-limit">
+                  (Not more than {q.wordLimit} words.)
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
 
         {/* Clear visual separation between passage and questions */}
         <div className="examprint-passage-separator" style={{ breakAfter: 'avoid', pageBreakAfter: 'avoid' }} />

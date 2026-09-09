@@ -32,25 +32,22 @@ export const SentenceTransformationBlock: React.FC<SentenceTransformationBlockPr
   return (
     <div className="examprint-transformation-block my-2 w-full flex flex-col gap-2.5 break-inside-avoid">
       {list.map((item, idx) => (
-        <div key={item.id || idx} className="examprint-transformation-item flex flex-col gap-1 text-[10.5pt]">
-          {/* Original Sentence */}
-          <div className="text-black font-medium pl-1">
-            <QuestionText text={item.originalSentence} />
-          </div>
+        <div key={item.id || idx} className="examprint-transformation-item flex w-full flex-col gap-1 text-[10.5pt]">
+          {/* Original sentence — omitted when the stem is already printed above. */}
+          {item.originalSentence ? (
+            <div className="text-black font-medium pl-1">
+              <QuestionText text={item.originalSentence} />
+            </div>
+          ) : null}
 
           {/* Rewrite prompt starter with dotted leader answer space */}
-          <div className="flex items-baseline gap-2 pl-3">
+          <div className="flex w-full items-baseline gap-2 pl-3">
             {item.promptStarter && (
               <span className="font-semibold text-black italic shrink-0">
                 {item.promptStarter}
               </span>
             )}
-            <div className="grow border-b border-dotted border-black h-4 mb-0.5" />
-            {item.marks && (
-              <span className="text-[9pt] font-semibold text-slate-700 shrink-0 ml-1">
-                ({item.marks} mark{item.marks === 1 ? '' : 's'})
-              </span>
-            )}
+            <div className="grow basis-0 min-w-[60%] border-b border-dotted border-black h-4 mb-0.5" />
           </div>
         </div>
       ))}
