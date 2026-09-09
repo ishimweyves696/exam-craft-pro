@@ -137,13 +137,15 @@ export function planExam(
 
   // The teacher owns each section's marks and question types; the AI is only
   // told how many items of each type the paper needs to be exactly filled.
-  specs.forEach((spec) => {
+  specs.forEach((spec, index) => {
     const types = spec.types;
     shape.set(spec.id, {
       subMin: spec.subMin,
       subMax: spec.subMax,
       partsPerSub: spec.partsPerSub,
     });
+    const rule = sectionRuleFor(subjectName, levelBand(config.level), spec.id, index);
+    if (rule) rules.set(spec.id, rule);
     const wanted = Math.max(0, Math.floor(spec.questionCount ?? 0));
     if (wanted > 0) {
       // The teacher fixed the number of questions: split it across the types.
@@ -179,6 +181,7 @@ export function planExam(
       request,
       excerpts: excerpts?.length ? excerpts : undefined,
       ...(shape.get(entry.sectionId) ?? {}),
+      rule: rules.get(entry.sectionId),
     };
   });
 
