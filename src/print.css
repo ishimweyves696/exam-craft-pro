@@ -707,7 +707,7 @@
 }
 
 .examprint-answer-space {
-  margin: 0.25cm 0 0 0.8cm;
+  margin: 0.15cm 0 0 0.8cm;
   width: calc(100% - 0.8cm);
   box-sizing: border-box;
   break-inside: auto;
@@ -720,11 +720,26 @@
 }
 
 .examprint-answer-line {
-  border-bottom: 1.5px dotted #000;
-  height: 1.0cm;
+  border-bottom: 1.2px dotted #000;
+  height: 0.85cm;
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Summary task sentence, printed once between the passage and the drafting box */
+.examprint-summary-task-top {
+  margin: 0.35cm 0 0.15cm 0;
+}
+.examprint-summary-task {
+  font-weight: 700;
+  font-size: 11pt;
+}
+.examprint-summary-word-limit {
+  font-style: italic;
+  font-size: 10pt;
+  margin-top: 0.1cm;
+}
+
 
 .examprint-answer-line:nth-of-type(odd) {
   break-after: avoid;

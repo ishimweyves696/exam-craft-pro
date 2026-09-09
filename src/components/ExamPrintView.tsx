@@ -19,12 +19,13 @@ export function attemptSentence(section: Section, lang?: string): string {
   // quarantined pending verified Kinyarwanda source paper per AGENTS.md:
   // const isRw = norm === 'rw';
 
-  if (!section.attemptRule || section.attemptRule.mode === 'all') {
+  const mode = section.attemptRule?.mode;
+  if (!section.attemptRule || mode === 'all' || mode === 'ATTEMPT_ALL') {
     if (isFr) return `Répondez à TOUTES les questions. (${section.marks} points)`;
     // if (isRw) return `Subiza IBIBAZO BYOSE. (${section.marks} amanota)`;
     return `Attempt ALL questions. (${section.marks} marks)`;
   }
-  const count = section.attemptRule.chooseCount ?? 1;
+  const count = section.attemptRule.chooseCount ?? section.attemptRule.choose ?? 1;
   const countStr = numberToWord(count, lang);
   if (isFr) return `Répondez à ${countStr} questions au choix. (${section.marks} points)`;
   // if (isRw) return `Subiza ibibazo ${countStr} gusa unyuzemo. (${section.marks} amanota)`;

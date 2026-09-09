@@ -21,51 +21,189 @@ interface Selection {
   question: number | null;
 }
 
-const QUESTION_TYPES: { value: string; label: string }[] = [
-  { value: 'mcq', label: 'Multiple choice' },
-  { value: 'true_false', label: 'True / False' },
-  { value: 'fill_blank', label: 'Fill in the blank' },
-  { value: 'matching', label: 'Matching' },
-  { value: 'short_answer', label: 'Short answer' },
-  { value: 'essay', label: 'Essay' },
+/**
+ * The full set of item formats the printed paper knows how to lay out.
+ * Grouped the way NESA papers group them: objective, structured, then extended.
+ */
+const QUESTION_TYPES: { value: string; label: string; group: string }[] = [
+  { value: 'mcq', label: 'Multiple choice', group: 'Objective' },
+  { value: 'true_false', label: 'True / False', group: 'Objective' },
+  { value: 'fill_blank', label: 'Fill in the blank', group: 'Objective' },
+  { value: 'matching', label: 'Matching', group: 'Objective' },
+  { value: 'short_answer', label: 'Short answer', group: 'Objective' },
+  { value: 'table', label: 'Table completion', group: 'Structured' },
+  { value: 'calculation', label: 'Calculation', group: 'Structured' },
+  { value: 'transformation', label: 'Sentence transformation', group: 'Structured' },
+  { value: 'error_correction', label: 'Error correction', group: 'Structured' },
+  { value: 'swot', label: 'SWOT matrix', group: 'Structured' },
+  { value: 'comprehension', label: 'Comprehension passage', group: 'Extended' },
+  { value: 'case_study', label: 'Case study', group: 'Extended' },
+  { value: 'summary', label: 'Summary writing', group: 'Extended' },
+  { value: 'composition', label: 'Composition (choice of topics)', group: 'Extended' },
+  { value: 'essay', label: 'Essay', group: 'Extended' },
 ];
+
+const QUESTION_TYPE_GROUPS = ['Objective', 'Structured', 'Extended'] as const;
 
 /** A4 width in CSS pixels — the sheet is always 21cm, only the preview scales. */
 const SHEET_PX = 793.7;
 
+function subItem(id: string, n: number, text: string, marks: number, extra: Record<string, any> = {}) {
+  return { id: `${id}_s${n}`, number: n, text, marks, answerSpace: 'small', ...extra };
+}
+
+/**
+ * Fills in the scaffolding a format needs so it always prints the same way,
+ * whether the item is newly added or switched over from another format.
+ */
+function seedForType(q: AnyQuestion, type: string) {
+  const id = q.id ?? `q_${Math.random().toString(36).slice(2, 7)}`;
+  switch (type) {
+    case 'mcq':
+      q.answerSpace = 'none';
+      if (!q.options?.length) {
+        q.options = ['Option A', 'Option B', 'Option C', 'Option D'].map((t, i) => ({
+          id: `${id}_o${i + 1}`,
+          text: t,
+          isCorrect: i === 0,
+        }));
+      }
+      break;
+    case 'true_false':
+    case 'fill_blank':
+      q.answerSpace = 'none';
+      break;
+    case 'matching':
+      q.answerSpace = 'none';
+      if (!q.tableData?.rows?.length) {
+        q.tableData = {
+          rows: [
+            ['Column A', 'Column B'],
+            ['Item 1', 'Match 1'],
+            ['Item 2', 'Match 2'],
+            ['Item 3', 'Match 3'],
+          ],
+        };
+      }
+      break;
+    case 'table':
+      q.answerSpace = 'none';
+      if (!q.tableData?.rows?.length) {
+        q.tableData = {
+          rows: [
+            ['Heading 1', 'Heading 2', 'Heading 3'],
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', ''],
+          ],
+        };
+      }
+      q.instruction = q.instruction ?? 'Complete the table below.';
+      break;
+    case 'calculation':
+      q.answerSpace = q.answerSpace && q.answerSpace !== 'none' ? q.answerSpace : 'medium';
+      q.givenData = q.givenData ?? 'Given: …';
+      q.finalAnswerSlot = q.finalAnswerSlot !== false;
+      q.instruction = q.instruction ?? 'Show all your working clearly.';
+      break;
+    case 'transformation':
+      q.answerSpace = 'none';
+      q.instruction = q.instruction ?? 'Rewrite the sentence as instructed, keeping the same meaning.';
+      break;
+    case 'error_correction':
+      q.answerSpace = q.answerSpace && q.answerSpace !== 'none' ? q.answerSpace : 'small';
+      q.instruction = q.instruction ?? 'Identify and correct the error in each sentence.';
+      break;
+    case 'swot':
+      q.answerSpace = 'none';
+      q.instruction = q.instruction ?? 'Complete the SWOT matrix below.';
+      break;
+    case 'comprehension':
+    case 'case_study': {
+      q.answerSpace = 'none';
+      const isCase = type === 'case_study';
+      q.instruction =
+        q.instruction ??
+        (isCase
+          ? 'Read the case study below carefully and answer the questions that follow.'
+          : 'Read the passage below carefully and answer the questions that follow.');
+      if (!q.text || q.text === 'New question…') {
+        q.text = isCase
+          ? 'TITLE OF THE CASE\n\nFirst paragraph: introduce the person or business, the place and the starting situation (about 60 words).\n\nSecond paragraph: describe what happened, with figures where possible (about 60 words).\n\nThird paragraph: state the problem the candidate must respond to (about 40 words).'
+          : 'TITLE OF THE PASSAGE\n\nFirst paragraph of the passage (about 70 words).\n\nSecond paragraph of the passage (about 70 words).\n\nThird paragraph of the passage (about 60 words).';
+      }
+      if (!q.subQuestions?.length) {
+        q.subQuestions = [
+          subItem(id, 1, 'Question about the text…', 2),
+          subItem(id, 2, 'Question about the text…', 2),
+          subItem(id, 3, 'Question about the text…', 2),
+        ];
+      }
+      break;
+    }
+    case 'summary':
+      q.answerSpace = 'none';
+      q.wordLimit = q.wordLimit ?? 100;
+      q.summaryTask =
+        q.summaryTask ??
+        `In your own words, summarise the passage above in not more than ${q.wordLimit ?? 100} words.`;
+      if (!q.text || q.text === 'New question…') {
+        q.text =
+          'TITLE OF THE PASSAGE\n\nFirst paragraph of the passage to be summarised (about 90 words).\n\nSecond paragraph of the passage to be summarised (about 90 words).\n\nThird paragraph of the passage to be summarised (about 80 words).';
+      }
+      break;
+    case 'composition':
+      q.answerSpace = 'xlarge';
+      q.numberingStyle = q.numberingStyle ?? 'alpha-lower';
+      q.instruction = q.instruction ?? 'Choose ONE of the following topics and write about it.';
+      if (!q.options?.length) {
+        q.options = ['Topic one…', 'Topic two…', 'Topic three…'].map((t, i) => ({
+          id: `${id}_t${i + 1}`,
+          text: t,
+          isCorrect: false,
+        }));
+      }
+      break;
+    case 'essay':
+      q.answerSpace = 'xlarge';
+      break;
+    default:
+      q.answerSpace = q.answerSpace ?? 'medium';
+  }
+  return q;
+}
+
+const DEFAULT_MARKS: Record<string, number> = {
+  mcq: 1,
+  true_false: 1,
+  fill_blank: 1,
+  matching: 3,
+  short_answer: 3,
+  table: 6,
+  calculation: 5,
+  transformation: 2,
+  error_correction: 4,
+  swot: 8,
+  comprehension: 10,
+  case_study: 12,
+  summary: 10,
+  composition: 15,
+  essay: 15,
+};
+
 function blankQuestion(type: string, sectionId: string, index: number): AnyQuestion {
   const id = `${sectionId}_q${index + 1}_${Math.random().toString(36).slice(2, 7)}`;
-  const base = { id, number: index + 1, text: 'New question…', marks: 1, type };
-  if (type === 'mcq') {
-    return {
-      ...base,
-      answerSpace: 'none',
-      options: ['Option A', 'Option B', 'Option C', 'Option D'].map((t, i) => ({
-        id: `${id}_o${i + 1}`,
-        text: t,
-        isCorrect: i === 0,
-      })),
-    };
-  }
-  if (type === 'matching') {
-    return {
-      ...base,
-      marks: 3,
-      answerSpace: 'none',
-      tableData: {
-        rows: [
-          ['Column A', 'Column B'],
-          ['Item 1', 'Match 1'],
-          ['Item 2', 'Match 2'],
-          ['Item 3', 'Match 3'],
-        ],
-      },
-    };
-  }
-  if (type === 'essay') return { ...base, marks: 15, answerSpace: 'xlarge' };
-  if (type === 'true_false' || type === 'fill_blank') return { ...base, answerSpace: 'none' };
-  return { ...base, marks: 3, answerSpace: 'medium' };
+  const base: AnyQuestion = {
+    id,
+    number: index + 1,
+    text: 'New question…',
+    marks: DEFAULT_MARKS[type] ?? 3,
+    type,
+    answerSpace: 'medium',
+  };
+  return seedForType(base, type);
 }
+
 
 function spaceValueOf(q: AnyQuestion): AnswerSpaceValue {
   return {
@@ -376,23 +514,21 @@ export function ExamEditor({
             commit((d) => {
               const q = d.sections[sel.section].questions[sel.question!] as AnyQuestion;
               q.type = e.target.value;
-              if (e.target.value === 'mcq' && !q.options?.length) {
-                q.options = ['Option A', 'Option B', 'Option C', 'Option D'].map((t, i) => ({
-                  id: `${q.id}_o${i + 1}`,
-                  text: t,
-                  isCorrect: i === 0,
-                }));
-              }
-              if (e.target.value === 'essay') q.answerSpace = 'xlarge';
+              seedForType(q, e.target.value);
             })
           }
           className="w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
         >
-          {QUESTION_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
+          {QUESTION_TYPE_GROUPS.map((g) => (
+            <optgroup key={g} label={g}>
+              {QUESTION_TYPES.filter((t) => t.group === g).map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </Field>
+
 
       <Field label="Marks">
         <input
@@ -871,26 +1007,31 @@ export function ExamEditor({
                     )}
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-dashed border-slate-300 pt-2">
-                    <span className="text-[11px] text-slate-500">Add question:</span>
-                    {QUESTION_TYPES.map((t) => (
-                      <MiniButton
-                        key={t.value}
-                        label={`Add ${t.label}`}
-                        onClick={() =>
-                          commit((d) => {
-                            const sec = d.sections[si];
-                            sec.questions.push(
-                              blankQuestion(t.value, sec.id ?? `sec_${si + 1}`, sec.questions.length),
-                            );
-                            sec.questions.forEach((qq, i) => ((qq as any).number = i + 1));
-                          })
-                        }
-                      >
-                        + {t.label}
-                      </MiniButton>
+                  <div className="mt-3 space-y-1.5 border-t border-dashed border-slate-300 pt-2">
+                    {QUESTION_TYPE_GROUPS.map((g) => (
+                      <div key={g} className="flex flex-wrap items-center gap-1.5">
+                        <span className="w-[70px] shrink-0 text-[11px] text-slate-500">{g}</span>
+                        {QUESTION_TYPES.filter((t) => t.group === g).map((t) => (
+                          <MiniButton
+                            key={t.value}
+                            label={`Add ${t.label}`}
+                            onClick={() =>
+                              commit((d) => {
+                                const sec = d.sections[si];
+                                sec.questions.push(
+                                  blankQuestion(t.value, sec.id ?? `sec_${si + 1}`, sec.questions.length),
+                                );
+                                sec.questions.forEach((qq, i) => ((qq as any).number = i + 1));
+                              })
+                            }
+                          >
+                            + {t.label}
+                          </MiniButton>
+                        ))}
+                      </div>
                     ))}
                   </div>
+
                 </section>
               ))}
             </div>

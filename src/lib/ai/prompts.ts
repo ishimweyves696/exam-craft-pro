@@ -9,11 +9,7 @@
 import type { BankType } from '../examBank';
 import type { ExamPlan } from './plan';
 import type { MaterialExcerpt } from '../source/types';
-import {
-  ANSWER_LENGTH_LABEL,
-  COGNITIVE_LABEL,
-  type SectionRule,
-} from '../examArchitecture';
+import { ANSWER_LENGTH_LABEL, COGNITIVE_LABEL, type SectionRule } from '../examArchitecture';
 
 export const SYSTEM_INSTRUCTIONS = `You are a senior Rwandan secondary-school examiner writing items for a NESA-standard end-of-term paper.
 
@@ -24,6 +20,14 @@ Non-negotiable rules:
 - Unambiguous, self-contained wording. No question may depend on a diagram, passage or table that is not given in its own text.
 - British English spelling. Plain text only: no markdown, no LaTeX, no bullet characters.
 - Every question must be factually correct and have one defensible expected answer.`;
+
+/** Language names as the model should understand them. */
+const LANGUAGE_NAME: Record<string, string> = {
+  en: 'English (British spelling)',
+  fr: 'French',
+  rw: 'Kinyarwanda',
+  sw: 'Kiswahili',
+};
 
 const TYPE_RULES: Record<BankType, string> = {
   mcq: `Multiple-choice questions.
@@ -63,17 +67,25 @@ export function buildPrompt(
   count: number,
   feedback?: string,
   material?: { excerpts: MaterialExcerpt[]; bookTitle: string; strictness: 'book_only' | 'book_first' },
+  shape?: { subMin?: number; subMax?: number; partsPerSub?: number },
   section?: SectionRule,
 ) {
   const topics = plan.topics.slice(0, 8).join('; ');
+  const syllabus = plan.syllabus?.length
+    ? plan.syllabus.slice(0, 10).map((line) => `  - ${line}`).join('\n')
+    : '';
   const parts = [
     `Subject: ${plan.subjectName}`,
     `Level: ${plan.level} — ${plan.bandLabel}`,
     `Assessment: ${plan.term} end-of-term examination, NESA house style`,
     `Cognitive emphasis for this paper: ${plan.bloomEmphasis}`,
-    `REB syllabus units for this level — you may ONLY examine content that belongs to these units: ${topics}`,
+    `Language: write every word of every item in ${LANGUAGE_NAME[plan.language] ?? 'English'}. Do not mix languages.`,
+    syllabus
+      ? `REB syllabus for this exact class, level and subject — you may ONLY examine content that belongs to these units and their listed sub-topics:\n${syllabus}`
+      : `REB syllabus units for this level — you may ONLY examine content that belongs to these units: ${topics}`,
     `Key competences the paper must assess: ${plan.competences.join('; ')}`,
   ];
+
   if (section) {
     parts.push(
       '',
@@ -81,10 +93,13 @@ export function buildPrompt(
       `- Purpose of this section: ${section.purpose}`,
       `- Dominant cognitive demand: ${COGNITIVE_LABEL[section.cognitive]}. Do not write items below or above this demand.`,
       `- Expected answer length: ${ANSWER_LENGTH_LABEL[section.answerLength]}.`,
-      `- The whole section is worth ${section.marks} marks and a candidate has about ${section.minutes} minutes for it, so each item must be answerable in the time one item of this section deserves.`,
+      `- The whole section is worth ${section.marks} marks and a candidate has about ${section.minutes} minutes for it.`,
       `- Items belonging in another section of this paper are invalid here.`,
     );
   }
+
+
+
   parts.push(
     `Paper conventions for a ${plan.band === 'primary' ? 'Primary' : plan.band === 'olevel' ? 'O-Level' : 'A-Level'} ${plan.subjectName} paper — the items you write must fit them:`,
     ...plan.blueprintNotes.slice(0, 8).map((n) => `- ${n}`),
@@ -101,6 +116,18 @@ export function buildPrompt(
     'Set "topic" to the REB unit the item belongs to, shortened to 2-5 words.',
     'No two items may test the same fact.',
   );
+
+  if (type === 'structured' && (shape?.subMin || shape?.subMax || shape?.partsPerSub)) {
+    const min = shape.subMin ?? 2;
+    const max = Math.max(min, shape.subMax ?? min);
+    parts.push(
+      '',
+      `Sub-part rule set by the teacher: each item must have between ${min} and ${max} parts.`,
+      shape.partsPerSub && shape.partsPerSub > 1
+        ? `Each part must itself carry exactly ${shape.partsPerSub} sub-parts.`
+        : 'Parts must not be split further.',
+    );
+  }
   if (material?.excerpts?.length) {
     parts.push(
       '',

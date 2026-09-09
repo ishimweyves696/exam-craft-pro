@@ -11,6 +11,13 @@ export * from './CoordinateGrid';
 export * from './OMRShadingStrip';
 export * from './SummaryBox';
 export * from './SentenceTransformationBlock';
+export * from './EquationFrame';
+export * from './GraphPlotBlock';
+export * from './DialogueBlock';
+export * from './LetterWritingBlock';
+export * from './TranslationBlock';
+export * from './GuidedCompositionBlock';
+export * from './DataResponseBlock';
 export * from './QuestionBlock';
 export * from './SectionBlock';
 

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FormatCheckRouteImport } from './routes/format-check'
 import { Route as ExamIdRouteImport } from './routes/exam.$id'
 import { Route as ExamIdIndexRouteImport } from './routes/exam.$id.index'
 import { Route as ExamIdEditRouteImport } from './routes/exam.$id.edit'
@@ -19,6 +20,11 @@ import { Route as ExamIdPrintRouteImport } from './routes/exam.$id.print'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormatCheckRoute = FormatCheckRouteImport.update({
+  id: '/format-check',
+  path: '/format-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExamIdRoute = ExamIdRouteImport.update({
@@ -49,6 +55,7 @@ const ExamIdPrintRoute = ExamIdPrintRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/format-check': typeof FormatCheckRoute
   '/exam/$id': typeof ExamIdRouteWithChildren
   '/exam/$id/edit': typeof ExamIdEditRoute
   '/exam/$id/guide': typeof ExamIdGuideRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/format-check': typeof FormatCheckRoute
   '/exam/$id/edit': typeof ExamIdEditRoute
   '/exam/$id/guide': typeof ExamIdGuideRoute
   '/exam/$id/print': typeof ExamIdPrintRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/format-check': typeof FormatCheckRoute
   '/exam/$id': typeof ExamIdRouteWithChildren
   '/exam/$id/edit': typeof ExamIdEditRoute
   '/exam/$id/guide': typeof ExamIdGuideRoute
@@ -75,6 +84,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/format-check'
     | '/exam/$id'
     | '/exam/$id/edit'
     | '/exam/$id/guide'
@@ -82,10 +92,16 @@ export interface FileRouteTypes {
     | '/exam/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/exam/$id/edit' | '/exam/$id/guide' | '/exam/$id/print' | '/exam/$id'
+    | '/'
+    | '/format-check'
+    | '/exam/$id/edit'
+    | '/exam/$id/guide'
+    | '/exam/$id/print'
+    | '/exam/$id'
   id:
     | '__root__'
     | '/'
+    | '/format-check'
     | '/exam/$id'
     | '/exam/$id/edit'
     | '/exam/$id/guide'
@@ -95,6 +111,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FormatCheckRoute: typeof FormatCheckRoute
   ExamIdRoute: typeof ExamIdRouteWithChildren
 }
 
@@ -105,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/format-check': {
+      id: '/format-check'
+      path: '/format-check'
+      fullPath: '/format-check'
+      preLoaderRoute: typeof FormatCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/exam/$id': {
@@ -164,6 +188,7 @@ const ExamIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FormatCheckRoute: FormatCheckRoute,
   ExamIdRoute: ExamIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport

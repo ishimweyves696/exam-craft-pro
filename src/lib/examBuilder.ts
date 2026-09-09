@@ -36,11 +36,23 @@ export interface SectionSpec {
   types: BankType[];
   instructions?: string;
   /**
+   * How many questions the section must contain. Optional: when absent the
+   * count follows the fixed marks-per-type rules. When present the section's
+   * marks are split evenly across the questions (a code rule, not an AI one).
+   */
+  questionCount?: number;
+  /** Advanced: how many sub-parts (a),(b),(c) a structured question may have. */
+  subMin?: number;
+  subMax?: number;
+  /** Advanced: sub-parts of a sub-part, (i),(ii). 0 = none. */
+  partsPerSub?: number;
+  /**
    * Source-book units/subunits pinned to this section. Content selection only:
    * the AI must draw this section's items from these parts of the book.
    */
   sourceNodeIds?: string[];
 }
+
 
 
 export interface ExamBuildConfig {
@@ -75,9 +87,35 @@ export interface ExamBuildConfig {
    * sent with the generation request.
    */
   sourceMaterial?: SourceSelectionRef;
+  /**
+   * Paper language. Optional: when absent it is derived from the subject
+   * (Kinyarwanda, Français and Kiswahili papers are written in their own
+   * language, everything else in English).
+   */
+  language?: PaperLanguage;
+  /** 'exam' = sectioned NESA paper. 'test' = a short class test, no sections. */
+  mode?: PaperMode;
+  /** Cover page on/off. Optional — defaults to on for exams, off for tests. */
+  coverPage?: boolean;
+  /** School / centre name printed on the cover. */
+  institutionName?: string;
+  /** Teacher's own instructions to candidates. Empty = NESA standard list. */
+  coverInstructions?: string[];
+}
+
+export type PaperLanguage = 'en' | 'fr' | 'rw' | 'sw';
+export type PaperMode = 'exam' | 'test';
+
+/** Language a subject is examined in unless the teacher says otherwise. */
+export function defaultLanguageFor(subjectId: string): PaperLanguage {
+  if (subjectId === 'french') return 'fr';
+  if (subjectId === 'kinyarwanda') return 'rw';
+  if (subjectId === 'kiswahili') return 'sw';
+  return 'en';
 }
 
 export type CognitiveEmphasis = 'balanced' | 'application' | 'analysis';
+
 
 export const DEFAULT_SECTION_PLAN: SectionSpec[] = [
   {
@@ -115,7 +153,10 @@ export const DEFAULT_CONFIG: ExamBuildConfig = {
   source: 'ai',
   units: [],
   cognitive: 'balanced',
+  mode: 'exam',
+  coverPage: true,
 };
+
 
 /** All question types a teacher can put in a section, with friendly labels. */
 export const QUESTION_TYPE_OPTIONS: { type: BankType; label: string; marks: string }[] = [
@@ -142,18 +183,13 @@ export function planTotalMarks(plan: SectionSpec[]): number {
   return plan.reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
 }
 
-/**
- * Sections the teacher configured, falling back to the standard NESA layout.
- *
- * ARCHITECTURE GUARD: whatever the teacher edited, a section may only carry
- * question types that the subject's examination architecture allows in that
- * section. A disallowed type is dropped; if nothing is left, the section falls
- * back to the official default types for that section.
- */
+/** Sections the teacher configured, falling back to the standard NESA layout. */
 export function resolveSectionPlan(config: ExamBuildConfig): SectionSpec[] {
   const subjectName = getSubject(config.subjectId)?.name ?? '';
   const band = levelBand(config.level);
 
+  // ARCHITECTURE GUARD: whatever the teacher edited, a section may only carry
+  // question types its subject's examination architecture allows there.
   const guard = (specs: SectionSpec[]): SectionSpec[] =>
     specs.map((spec, i) => {
       const rule = sectionRuleFor(subjectName, band, spec.id, i);
@@ -459,11 +495,26 @@ export function buildExam(
     const budget = spec.marks;
 
 
-    if (kind === 'essay') {
+    // Fixed rule: when the teacher asked for an exact number of questions, the
+    // section's marks are split evenly across them (largest remainder first).
+    const wanted = Math.max(0, Math.floor(spec.questionCount ?? 0));
+    if (wanted > 0) {
+      const n = Math.min(wanted, Math.max(pool.length, 1));
+      const per = splitEven(budget, n);
+      for (let i = 0; i < n; i++) {
+        const fresh = pool.find((p) => !used.has(p.text));
+        if (!fresh) break;
+        used.add(fresh.text);
+        chosen.push(fresh);
+        overrides.push(per[i]);
+        marksSoFar += per[i];
+      }
+    } else if (kind === 'essay') {
       // Fixed rule: essay questions carry equal weight; the number of essays is
       // the budget divided by the standard 15-mark essay, at least one.
       const n = Math.max(1, Math.min(pool.length || 1, Math.round(budget / 15)));
       const per = splitEven(budget, n);
+
       for (let i = 0; i < n; i++) {
         const item = pool[i % Math.max(pool.length, 1)];
         if (!item || used.has(item.text)) {
@@ -509,16 +560,21 @@ export function buildExam(
     const answers = chosen.flatMap((item, qi) => collectAnswers(item, questions[qi]));
     const sectionMarks = questions.reduce((s, q) => s + q.marks, 0);
 
+    // A class test has no section headings: the questions simply run on.
+    const heading =
+      (config.mode ?? 'exam') === 'test' ? '' : spec.name || SECTION_TITLES[kind];
+
     sections.push({
       id: sectionId,
-      name: spec.name || SECTION_TITLES[kind],
-      title: spec.name || SECTION_TITLES[kind],
+      name: heading,
+      title: heading,
       instructions: spec.instructions?.trim() || instructionsForTypes(spec.types),
       marks: sectionMarks,
       attemptRule: { mode: 'all' },
       questions,
       presentation: { pageBreakBefore: si > 0, columns: 1 },
     });
+
 
     guideSections.push({ title: spec.name || SECTION_TITLES[kind], answers });
   });
@@ -542,6 +598,10 @@ export function buildExam(
 
   const totalMarks = sections.reduce((s, sec) => s + sec.marks, 0);
 
+  const mode = config.mode ?? 'exam';
+  const showCover = config.coverPage ?? mode === 'exam';
+  const custom = (config.coverInstructions ?? []).map((s) => s.trim()).filter(Boolean);
+
   const exam: GeneratedExam = {
     header: {
       subjectName: subject.name.toUpperCase(),
@@ -553,12 +613,19 @@ export function buildExam(
       level: config.level,
       examDate: config.examDate,
       examTime: config.examTime,
-      instructions: EXAM_INSTRUCTIONS,
-      language: 'en',
-      metadata: { coverPage: { termSemester: config.term } } as any,
+      instructions: custom.length ? custom : EXAM_INSTRUCTIONS,
+      language: config.language ?? defaultLanguageFor(config.subjectId),
+      metadata: {
+        coverPage: {
+          termSemester: config.term,
+          showCoverPage: showCover,
+          institutionName: config.institutionName || undefined,
+        },
+      } as any,
     },
     sections,
   };
+
 
   // Deterministic numbering / hierarchy / validation pass.
   buildCanonicalExamStructure(exam);
@@ -584,7 +651,13 @@ const KEYS: (keyof ExamBuildConfig)[] = [
   'units',
   'cognitive',
   'sourceMaterial',
+  'language',
+  'mode',
+  'coverPage',
+  'institutionName',
+  'coverInstructions',
 ];
+
 
 export function encodeConfig(config: ExamBuildConfig): string {
   const ordered: any = {};
