@@ -21,6 +21,7 @@ import { buildPrompt, SYSTEM_INSTRUCTIONS } from './prompts';
 import { callGatewayJson, GatewayError } from './gateway.server';
 import { validateItems } from './validate';
 import type { MaterialExcerpt, MaterialPayload } from '../source/types';
+import type { SectionRule } from '../examArchitecture';
 
 export interface GenerationResult {
   items: BankItem[];
@@ -165,6 +166,7 @@ export async function generateExamContent(
     subMin: q.subMin,
     subMax: q.subMax,
     partsPerSub: q.partsPerSub,
+    rule: q.rule,
   });
 
   await runPass(plan.quotas.map((q) => asJob(q, q.request)));

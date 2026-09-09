@@ -42,6 +42,8 @@ export interface TypeQuota {
   subMin?: number;
   subMax?: number;
   partsPerSub?: number;
+  /** The subject's fixed rule for this section: what it exists to test. */
+  rule?: SectionRule;
 }
 
 export interface ExamPlan {

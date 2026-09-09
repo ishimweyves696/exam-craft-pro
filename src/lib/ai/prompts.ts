@@ -67,6 +67,7 @@ export function buildPrompt(
   feedback?: string,
   material?: { excerpts: MaterialExcerpt[]; bookTitle: string; strictness: 'book_only' | 'book_first' },
   shape?: { subMin?: number; subMax?: number; partsPerSub?: number },
+  section?: SectionRule,
 ) {
   const topics = plan.topics.slice(0, 8).join('; ');
   const syllabus = plan.syllabus?.length
