@@ -277,6 +277,7 @@ export const EXAM_INSTRUCTIONS: string[] = [
 /* ---------- BUILD ---------- */
 
 export function itemMarks(item: BankItem): number {
+  if (typeof item.marks === 'number' && item.marks > 0) return Math.round(item.marks);
   if (item.type === 'matching' && item.pairs) return item.pairs.length;
   if (item.type === 'structured' && item.parts) {
     return item.parts.reduce((sum, p) => sum + (p.parts?.length ? p.parts.length * 2 : 3), 0);

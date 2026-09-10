@@ -24,6 +24,11 @@ export interface BankItem {
   rubric?: string[];
   /** structured: level-2 parts, each optionally with level-3 parts */
   parts?: { text: string; answer?: string; parts?: { text: string; answer?: string }[] }[];
+  /**
+   * Marks stated by the source (past-paper uploads only). Content-side fact,
+   * not a layout decision: when absent the fixed MARKS_BY_TYPE rules apply.
+   */
+  marks?: number;
   /** Section this item was written for, when the teacher pinned book units to it. */
   sectionId?: string;
 }

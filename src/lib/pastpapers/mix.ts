@@ -30,7 +30,9 @@ export function sectionPlanFromBlueprint(blueprint: PaperBlueprint): SectionSpec
 }
 
 function toBankItem(q: PastQuestion, marks: number, sectionId: string): BankItem {
-  const type: BankType = q.type === GENERIC_TYPE ? 'generic' : q.type;
+  // Unknown types print as a plain question block with a mark-sized answer
+  // space — never as garbage, never as a wrong widget.
+  const type: BankType = q.type === GENERIC_TYPE ? 'short_answer' : q.type;
   return {
     type,
     text: q.text,
