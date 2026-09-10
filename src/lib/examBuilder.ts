@@ -101,6 +101,15 @@ export interface ExamBuildConfig {
   institutionName?: string;
   /** Teacher's own instructions to candidates. Empty = NESA standard list. */
   coverInstructions?: string[];
+  /**
+   * Uploaded past papers this paper is modelled on. CONTENT AND STRUCTURE
+   * ONLY: the uploads decide sections, marks, counts, types and (in 'mix'
+   * mode) the question text. Fonts, spacing, numbering, answer lines and page
+   * breaks still come only from the fixed rules in this file and the print CSS.
+   * 'mix'   = reuse real questions from the uploads.
+   * 'fresh' = write new questions in the same shape and house style.
+   */
+  pastPapers?: { paperIds: string[]; mode: 'mix' | 'fresh' };
 }
 
 export type PaperLanguage = 'en' | 'fr' | 'rw' | 'sw';
@@ -268,6 +277,7 @@ export const EXAM_INSTRUCTIONS: string[] = [
 /* ---------- BUILD ---------- */
 
 export function itemMarks(item: BankItem): number {
+  if (typeof item.marks === 'number' && item.marks > 0) return Math.round(item.marks);
   if (item.type === 'matching' && item.pairs) return item.pairs.length;
   if (item.type === 'structured' && item.parts) {
     return item.parts.reduce((sum, p) => sum + (p.parts?.length ? p.parts.length * 2 : 3), 0);
@@ -656,6 +666,7 @@ const KEYS: (keyof ExamBuildConfig)[] = [
   'coverPage',
   'institutionName',
   'coverInstructions',
+  'pastPapers',
 ];
 
 
