@@ -16,6 +16,11 @@ import type { GeneratedExam, GeneratedMarkingGuide } from '../types';
 import { loadBook } from './source/store';
 import { buildMaterialPayload } from './source/payload';
 import type { MaterialPayload } from './source/types';
+import { loadPaper } from './pastpapers/store';
+import { buildBlueprint } from './pastpapers/blueprint';
+import { mixItems } from './pastpapers/mix';
+import { pastPaperPayload } from './pastpapers/payload';
+import type { PastPaper } from './pastpapers/types';
 
 
 interface Cached {
@@ -54,9 +59,30 @@ function writeCache(id: string, value: Cached) {
  * Code decides what the model sees; the exam id only carries the ticked ids.
  * Device storage is asynchronous, so this resolves before generation starts.
  */
+function pastPapersFor(config: ReturnType<typeof decodeConfig>): PastPaper[] {
+  const ids = config.pastPapers?.paperIds ?? [];
+  return ids.map((pid) => loadPaper(pid)).filter((p): p is PastPaper => Boolean(p));
+}
+
+/**
+ * MIX MODE — real questions from the uploads, arranged by the learned shape.
+ * Fully seeded, so the same exam id always rebuilds the same paper, and the
+ * questions still pass through every fixed layout rule in the builder.
+ */
+function mixedItems(config: ReturnType<typeof decodeConfig>): BankItem[] | undefined {
+  if (config.pastPapers?.mode !== 'mix') return undefined;
+  const papers = pastPapersFor(config);
+  const blueprint = buildBlueprint(papers);
+  if (!blueprint) return [];
+  return mixItems(papers, blueprint, config.seed || 1);
+}
+
 async function materialFor(
   config: ReturnType<typeof decodeConfig>,
 ): Promise<MaterialPayload | undefined> {
+  if (config.pastPapers?.mode === 'fresh' && !config.sourceMaterial?.bookId) {
+    return pastPaperPayload(pastPapersFor(config));
+  }
   const ref = config.sourceMaterial;
   if (!ref?.bookId) return undefined;
   const book = await loadBook(ref.bookId);
@@ -70,7 +96,8 @@ async function materialFor(
 
 export function useExamContent(id: string) {
   const config = decodeConfig(id);
-  const useAi = config.source === 'ai';
+  const mixMode = config.pastPapers?.mode === 'mix';
+  const useAi = config.source === 'ai' && !mixMode;
   const generate = useServerFn(generateExamItems);
 
   const [items, setItems] = useState<BankItem[] | undefined>(() =>
@@ -122,7 +149,16 @@ export function useExamContent(id: string) {
     };
   }, [id, useAi, generate]);
 
-  const built = buildExam(config, useAi ? items : undefined);
+  // Uploaded papers live in this browser, so the mix is resolved after
+  // hydration; the server render shows the same paper built from the bank.
+  const [mixed, setMixed] = useState<BankItem[] | undefined>(undefined);
+  useEffect(() => {
+    if (!mixMode) return;
+    setMixed(mixedItems(config));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, mixMode]);
+
+  const built = buildExam(config, mixMode ? mixed : useAi ? items : undefined);
 
   // Teacher edits win over generated content, and are read after hydration so
   // the server-rendered markup still matches the first client render.
@@ -154,7 +190,7 @@ export function useExamContent(id: string) {
     resetEdits: reset,
     config,
     /** True while AI content is still being written; the view shows bank content meanwhile. */
-    loading: useAi && (loading || items === undefined) && !edits,
+    loading: (useAi && (loading || items === undefined) && !edits) || (mixMode && mixed === undefined && !edits),
     warning,
     /** Per-question-type outcome of the AI compliance gate. */
     report,
