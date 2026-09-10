@@ -37,7 +37,7 @@ export interface PaperLabel {
   confidence: number;
 }
 
-const schema = {
+const schema: Record<string, unknown> = {
   type: 'object',
   additionalProperties: false,
   required: ['labels'],
@@ -57,7 +57,7 @@ const schema = {
       },
     },
   },
-} as const;
+};
 
 export const readPaperQuestions = createServerFn({ method: 'POST' })
   .inputValidator((data) => input.parse(data))
